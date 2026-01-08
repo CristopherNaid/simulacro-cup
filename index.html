@@ -6,6 +6,12 @@
     <title>Simulacro Primer Parcial CUP - FICCT</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- KaTeX para fórmulas matemáticas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" 
+          integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" 
+          crossorigin="anonymous">
+    
     <style>
         /* ========================================
            VARIABLES Y CONFIGURACIÓN GENERAL
@@ -1523,6 +1529,21 @@
                 font-size: 1rem;
             }
         }
+        
+        /* Estilos para KaTeX */
+        .katex {
+            font-size: 1.1em !important;
+        }
+        
+        .katex-display {
+            overflow: auto hidden;
+            padding: 10px 0;
+        }
+        
+        /* Para mostrar correctamente las fórmulas */
+        .katex-html {
+            white-space: normal !important;
+        }
     </style>
 </head>
 <body>
@@ -1700,62 +1721,1046 @@
     </div>
 </div>
 
+<!-- KaTeX Scripts -->
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" 
+        integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" 
+        crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" 
+        integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" 
+        crossorigin="anonymous"></script>
+
 <script>
     // ========================================
-    // BASE DE DATOS DE PREGUNTAS
+    // INICIALIZACIÓN DE KaTeX
+    // ========================================
+    document.addEventListener("DOMContentLoaded", function() {
+        // Configuración de KaTeX para renderizar automáticamente
+        if (typeof renderMathInElement !== 'undefined') {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError: false,
+                trust: true
+            });
+        }
+        
+        // Inicializar partículas
+        createParticles();
+        
+        // Recrear partículas cada 30 segundos para mantener la animación
+        setInterval(createParticles, 30000);
+    });
+
+    // Función para renderizar KaTeX en un elemento específico
+    function renderMath(element) {
+        if (typeof renderMathInElement !== 'undefined') {
+            renderMathInElement(element, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError: false,
+                trust: true
+            });
+        } else if (typeof katex !== 'undefined') {
+            // Renderizar manualmente si auto-render no está disponible
+            element.querySelectorAll('.katex').forEach(el => {
+                try {
+                    katex.render(el.textContent, el, {
+                        throwOnError: false,
+                        displayMode: el.classList.contains('display')
+                    });
+                } catch (e) {
+                    console.error('Error renderizando KaTeX:', e);
+                }
+            });
+        }
+    }
+
+    // ========================================
+    // FUNCIÓN PARA CORREGIR SINTÁXIS LATEX
+    // ========================================
+    function fixLatexSyntax(text) {
+        if (!text) return text;
+        
+        // Reemplazar caracteres problemáticos
+        return text
+            .replace(/\\\{frac\\\{/g, '\\frac{')
+            .replace(/\\\}\\/g, '}')
+            .replace(/\\\{/g, '{')
+            .replace(/\\\}/g, '}')
+            .replace(/\{frac\{/g, '\\frac{')
+            .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '\\frac{$1}{$2}')
+            .replace(/\\sqrt\[([^\]]+)\]\{/g, '\\sqrt[$1]{')
+            .replace(/\\sqrt\{/g, '\\sqrt{')
+            .replace(/\\cdot/g, '\\cdot')
+            .replace(/\\le/g, '\\le')
+            .replace(/\\ge/g, '\\ge');
+    }
+
+    // ========================================
+    // BASE DE DATOS DE PREGUNTAS CORREGIDA
     // ========================================
     const fullDB = {
-        math: [
-            {q: "De las siguientes expresiones: I. 2ˣ⁺³ = 2ˣ · 2³; II. (25)ˣ = 5²ˣ; III. 2ˣ + 3ˣ = 5ˣ", o: ["Solo I es verdadera", "Solo II es verdadera", "Solo III es verdadera", "Solo I y II son verdaderas", "Solo III es falsa"], a: 3},
-            {q: "Después de simplificar la expresión C = (2ⁿ⁺⁴ - 2·2ⁿ) / (2·2ⁿ⁺³) se obtiene:", o: ["2ⁿ⁺¹", "7/8", "-2ⁿ⁺¹", "1 - 2ⁿ", "7/4"], a: 1},
-            {q: "Después de simplificar la expresión C = ⁿ√ (32 / 2⁵⁺ⁿ) se obtiene:", o: ["1/2", "2", "4", "1/4", "ⁿ√(-n)"], a: 0},
-            {q: "El valor numérico de la expresión C = (3 + √18)/3 - 1 es:", o: ["√2", "1 + √18", "√2/3", "√18", "2√2"], a: 0},
-            {q: "El valor numérico de la expresión C = 4√50 - 8√(1/2) es:", o: ["16√2", "12√2", "10√2", "24√2", "6√2"], a: 0},
-            {q: "Después de simplificar la expresión C = ᵃ⁻¹√( a / ᵃ√a ) el resultado es:", o: ["ᵃ⁻¹√a", "ᵃ√a", "a", "1", "a²"], a: 1},
-            {q: "El valor numérico de la expresión C = √(5√2 + 7) · √(5√2 - 7) es:", o: ["√3", "√(-39)", "√43", "1", "√57"], a: 3},
-            {q: "Después de simplificar la expresión C = ⁿ√( (5ⁿ⁺² - 5ⁿ) / 24 ) el resultado es:", o: ["5", "ⁿ√(25/24)", "1/5", "ⁿ√(5ⁿ⁺¹)", "1"], a: 0},
-            {q: "El valor numérico de la expresión C = √( (9² · 2⁻²) / √(2⁴) ) es:", o: ["9/4", "√(2/3)", "4/9", "1", "2.25"], a: 4},
-            {q: "Después de simplificar la expresión E = ⁴√( (3¹³ + 3¹²) / (2⁵ / 2³) ) el valor numérico es:", o: ["9", "126", "721", "630", "27"], a: 4}
-        ],
+         math: [
+        // 1
+        { q: "De las siguientes expresiones: \nI. $2^{x+3} = 2^x \\cdot 2^3$ \nII. $(25)^x = 5^{2x}$ \nIII. $2^x + 3^x = 5^x$", 
+          o: ["Solo I es verdadera", "Solo II es verdadera", "Solo III es verdadera", "Solo II es falsa", "Solo III es falsa"], 
+          a: 4 },
+        
+        // 2
+        { q: "Después de simplificar la expresión $C=\\frac{2^{n+4}-2\\cdot 2^{n}}{2\\cdot 2^{n+3}}$ se obtiene:", 
+          o: ["$2^{n+1}=\\frac{1}{8}$", "$\\frac{7}{8}$", "$-2^{n+1}$", "$1-2^n$", "$\\frac{7}{4}$"], 
+          a: 1 },
+        
+        // 3
+        { q: "Después de simplificar la expresión $C=\\sqrt[n]{\\frac{32}{2^{5+n}}}$ se obtiene:", 
+          o: ["$\\frac{1}{2}$", "$2$", "$4$", "$\\frac{1}{4}$", "$\\sqrt[n]{-n}$"], 
+          a: 0 },
+        
+        // 4
+        { q: "El valor numérico de la expresión $C=\\frac{3+\\sqrt{18}}{3}-1$ es:", 
+          o: ["$\\sqrt{2}$", "$1+\\sqrt{18}$", "$\\sqrt{2}$", "$\\sqrt{18}$", "$2\\sqrt{2}$"], 
+          a: 0 },
+        
+        // 5
+        { q: "El valor numérico de la expresión $C=4\\sqrt{50}-8\\sqrt{\\frac{1}{2}}$ es:", 
+          o: ["$16\\sqrt{2}$", "$12\\sqrt{2}$", "$10\\sqrt{2}$", "$24\\sqrt{2}$", "$6\\sqrt{2}$"], 
+          a: 0 },
+        
+        // 6
+        { q: "Después de simplificar la expresión $C=\\sqrt[a-1]{\\frac{a}{\\sqrt[a]{a}}}$ el resultado es:", 
+          o: ["$\\sqrt[a-1]{a}$", "$\\sqrt[a]{a}$", "$\\sqrt{a^2-a}\\sqrt[a]{a}$", "$a$", "$1$"], 
+          a: 1 },
+        
+        // 7
+        { q: "El valor numérico de la expresión $C=\\sqrt{5\\sqrt{2}+7}\\cdot\\sqrt{5\\sqrt{2}-7}$ es:", 
+          o: ["$\\sqrt{3}$", "$\\sqrt{-39}$", "$\\sqrt{43}$", "$1$", "$\\sqrt{57}$"], 
+          a: 3 },
+        
+        // 8
+        { q: "Después de simplificar la expresión $C=\\sqrt[n]{\\frac{5^{n+2}-5^{n}}{24}}$ el resultado es:", 
+          o: ["$5$", "$\\sqrt[n]{\\frac{25}{24}}$", "$\\frac{1}{5}$", "$\\sqrt[n]{5^{n+1}}$", "$1$"], 
+          a: 0 },
+        
+        // 9
+        { q: "El valor numérico de la expresión $C=\\sqrt{\\frac{9^2 \\cdot 2^{-2}}{\\sqrt{2^4}}}$ es:", 
+          o: ["$\\sqrt{\\frac{3}{2}}$", "$\\frac{9}{4}$", "$\\sqrt{\\frac{2}{3}}$", "$\\frac{4}{9}$", "$1$"], 
+          a: 1 },
+        
+        // 10
+        { q: "Después de simplificar la expresión $E=\\sqrt[4]{\\frac{3^{13}+3^{12}}{2^{5}\\div 2^{3}}}$ el valor numérico es:", 
+          o: ["$9$", "$126$", "$721$", "$630$", "$27$"], 
+          a: 4 },
+        
+        // 11
+        { q: "El valor numérico de la expresión $C=(\\frac{3}{2})^{-2}\\cdot\\frac{9}{16}$ es:", 
+          o: ["$\\frac{1}{2}$", "$4$", "$-\\frac{1}{2}$", "$\\frac{1}{4}$", "$3$"], 
+          a: 3 },
+        
+        // 12
+        { q: "Después de simplificar la expresión $E=\\frac{a^{9}\\cdot a^{-2}}{a}$ el resultado es:", 
+          o: ["$a$", "$a^{6}$", "$a^{9}$", "$a^{-3}$", "$a^{3}$"], 
+          a: 1 },
+        
+        // 13
+        { q: "Después de simplificar la expresión $E=(\\frac{1}{3}x^{3}y^{-3})^{-2}$ el resultado es:", 
+          o: ["$\\frac{x^{6}}{y^{6}}$", "$\\frac{9x^{6}}{y^{6}}$", "$\\frac{9y^{6}}{x^{6}}$", "$\\frac{y^{6}}{x^{6}}$", "$\\frac{3x^{6}}{y^{3}}$"], 
+          a: 2 },
+        
+        // 14
+        { q: "Después de simplificar la expresión $E=(-2xy^{2})^{5}(\\frac{x^{3}}{8y^{3}})$ el resultado es:", 
+          o: ["$4x^{8}y^{7}$", "$4x^{8}y^{8}$", "$-3x^{8}y^{7}$", "$4x^{7}y^{7}$", "$-4x^{8}y^{7}$"], 
+          a: 4 },
+        
+        // 15
+        { q: "Después de simplificar la expresión $E=(\\frac{x^{6}}{16y^{-4}})^{-\\frac{1}{2}}$ el resultado es:", 
+          o: ["$\\frac{4}{x^{3}y^{2}}$", "$\\frac{x^{3}y^{2}}{4}$", "$\\frac{3}{x^{3}y^{2}}$", "$\\frac{16}{x^{3}y^{2}}$", "$\\frac{4}{x^{2}y^{2}}$"], 
+          a: 0 },
+        
+        // 16
+        { q: "Después de simplificar la expresión $C=(\\frac{c^{-4}}{81d^{8}})^{-\\frac{3}{4}}$ el resultado es:", 
+          o: ["$9c^{3}d^{8}$", "$27c^{2}d^{8}$", "$27c^{3}d^{6}$", "$27c^{3}d^{8}$", "$81c^{3}d^{8}$"], 
+          a: 2 },
+        
+        // 17
+        { q: "Después de simplificar la expresión $C=m^{2}\\sqrt{9m^{-4}n^{6}}$ el resultado es:", 
+          o: ["$3n^{2}$", "$n^{3}$", "$3m^{-2}$", "$3m^{3}$", "$3n^{3}$"], 
+          a: 4 },
+        
+        // 18
+        { q: "Después de simplificar la expresión $C=\\frac{b}{2}\\sqrt{16a^{8}b^{-2}}$ el resultado es:", 
+          o: ["$3n^{2}$", "$2a^{4}$", "$2a^{4}b$", "$a^{4}$", "$a^{4}b$"], 
+          a: 1 },
+        
+        // 19
+        { q: "Después de simplificar la expresión $C=(\\frac{n^{3}}{8})^{-\\frac{2}{3}}$ el resultado es:", 
+          o: ["$\\frac{4}{n^{3}}$", "$\\frac{1}{4n^{2}}$", "$\\frac{4}{n^{2}}$", "$\\frac{n^{2}}{4}$", "$\\frac{2}{n^{2}}$"], 
+          a: 2 },
+        
+        // 20
+        { q: "Después de simplificar la expresión $C=(a^{3}b^{6})^{-\\frac{1}{3}}$ el resultado es:", 
+          o: ["$\\frac{1}{ab}$", "$\\frac{1}{ab^{2}}$", "$ab^{2}$", "$b^{2}$", "$a$"], 
+          a: 1 },
+        
+        // 21
+        { q: "Al simplificar $6a-\\{2b+[3-(a+b)+(5a-2)]\\}$ se obtiene:", 
+          o: ["$2a-b-1$", "$b-2a$", "$2a+b+1$", "$2b-a-1$", "$1-2a$"], 
+          a: 0 },
+        
+        // 22
+        { q: "Al simplificar $2x-\\{2y+[-4-(3x-2y)+(6x-y)]\\}$ se obtiene:", 
+          o: ["$-x+3y+4$", "$x-3y+4$", "$-x-3y+4$", "$x+3y-4$", "$x+4$"], 
+          a: 2 },
+        
+        // 23
+        { q: "¿Cuál es el valor numérico de la expresión: $a-2(3b+?)$ cuando $a=3$, $b=-1$ y $c=-4$?", 
+          o: ["$-17$", "$11$", "$-11$", "$-7$", "$17$"], 
+          a: 4 },
+        
+        // 24
+        { q: "Al evaluar $\\frac{3ab-2cd}{4ac}$ con $a=-2$, $b=3$, $c=-1$ y $d=2$ se obtiene:", 
+          o: ["$-\\frac{15}{8}$", "$\\frac{15}{8}$", "$-\\frac{7}{4}$", "$\\frac{7}{4}$", "$-\\frac{13}{8}$"], 
+          a: 2 },
+        
+        // 25
+        { q: "¿Cuál es el resultado de la siguiente suma algebraica: $4x^{2}+5x+6$; $5x^{2}-7x-7$; $8x^{2}+2x+8$?", 
+          o: ["$17x^{2}-x-7$", "$17x^{2}+x-7$", "$17x^{2}-7$", "$17x^{2}+7$", "$17x^{2}+x+7$"], 
+          a: 3 },
+        
+        // 26
+        { q: "Al restar $2x-3y-6$ de $4x-3y+10$ se obtiene:", 
+          o: ["$-2x-16$", "$6x-6y+4$", "$2x+16$", "$-6x+6y-4$", "$2x-16$"], 
+          a: 2 },
+        
+        // 27
+        { q: "Al restar $3x^3-7x^2+2x-12$ de $10x^{3}-6x^{2}-2x-8$ se obtiene:", 
+          o: ["$13x^{3}-13x^{2}-16$", "$7x^{3}+x^{2}+4$", "$7x^{3}+x^{2}-4x+4$", "$-7x^{3}-x^{2}+4x-4$", "$13x^{3}+13x^{2}+20$"], 
+          a: 2 },
+        
+        // 28
+        { q: "El producto de $(-3x^{2}y)(4xy^{2})(-2x^{3}y^{4})$ es:", 
+          o: ["$24x^{6}y^{7}$", "$-12x^{5}y^{6}$", "$12x^{5}y^{6}$", "$24x^{6}y^{8}$", "$-24x^{6}y^{7}$"], 
+          a: 0 },
+        
+        // 29
+        { q: "El cociente de dividir $6m^{2}-11mn+5n^{2}$ entre $n-m$ es:", 
+          o: ["$6m-5n$", "$5n-6m$", "$-5n-6m$", "$-6m-5n$", "$-6m+5n$"], 
+          a: 4 },
+        
+        // 30
+        { q: "Al simplificar $\\frac{a^{5}b^{-4}c^{-1}}{a^{-3}b^{-6}c^{3}}$ se obtiene:", 
+          o: ["$\\frac{a^{2}c^{2}}{b^{2}}$", "$\\frac{a^{8}c^{2}}{b^{10}}$", "$\\frac{a^{8}c^{4}}{b^{2}}$", "$\\frac{a^{8}b^{2}}{c^{4}}$", "$a^{8}b^{2}c^{4}$"], 
+          a: 3 },
+        
+        // 31
+        { q: "Al simplificar $\\sqrt{64x^{8}y^{6}z^{4}}$ se obtiene:", 
+          o: ["$8x^{6}y^{4}z^{2}$", "$16x^{4}y^{2}z^{3}$", "$8x^{4}y^{3}z^{2}$", "$32x^{4}y^{6}z^{2}$", "$8x^{4}y^{2}z^{2}$"], 
+          a: 2 },
+        
+        // 32
+        { q: "Al resolver $(7x^{2}-2xy)^{2}$ se obtiene:", 
+          o: ["$49x^{4}-28x^{3}y+4x^{2}y^{2}$", "$49x^{4}-4x^{2}y^{2}$", "$14x^{4}-14xy+4x^{2}y^{2}$", "$49x^{4}+28x^{3}y-4x^{2}y^{2}$", "$49x^{4}+4x^{2}y^{2}$"], 
+          a: 0 },
+        
+        // 33
+        { q: "Al desarrollar $(\\frac{5}{4}x-\\frac{1}{3})^{2}$ se obtiene:", 
+          o: ["$\\frac{25}{16}x^{2}-\\frac{1}{9}$", "$\\frac{25}{16}x^{2}+\\frac{1}{9}$", "$\\frac{25}{16}x^{2}-\\frac{5}{6}x+\\frac{1}{9}$", "$\\frac{25}{16}x^{2}+\\frac{5}{6}x-\\frac{1}{9}$", "$\\frac{25}{16}x^{2}-\\frac{5}{12}x+\\frac{1}{9}$"], 
+          a: 2 },
+        
+        // 34
+        { q: "Al resolver $(\\frac{2}{3}x+\\frac{1}{2})(\\frac{2}{3}x-\\frac{1}{2})$ se obtiene:", 
+          o: ["$\\frac{4}{9}x^{2}-\\frac{1}{4}$", "$\\frac{4}{6}x^{2}-\\frac{1}{4}$", "$\\frac{4}{9}x^{2}+\\frac{1}{4}$", "$\\frac{4}{6}x^{2}-\\frac{1}{4}$", "$\\frac{4}{9}x^{2}-\\frac{1}{2}$"], 
+          a: 0 },
+        
+        // 35
+        { q: "Al resolver $(4x^{3}y-5z)(4x^{3}y+5z)$ se obtiene:", 
+          o: ["$8x^{6}y^{2}-10z^{2}$", "$16x^{9}y^{2}-25z^{2}$", "$16x^{6}y^{2}-10z^{2}$", "$8x^{6}y^{2}-25z^{2}$", "$16x^{6}y^{2}-25z^{2}$"], 
+          a: 4 },
+        
+        // 36
+        { q: "Al resolver $(x-6)(x+4)$ se obtiene:", 
+          o: ["$x^{2}-2x+24$", "$x^{2}-2x-24$", "$x^{2}+24x-10$", "$x^{2}+10x+24$", "$x^{2}+24x+10$"], 
+          a: 1 },
+        
+        // 37
+        { q: "Al desarrollar $(3x+2)^{3}$ se obtiene:", 
+          o: ["$27x^{3}-54x^{2}+36x+8$", "$27x^{3}+54x^{2}+36x+4$", "$9x^{3}+54x^{2}+36x+8$", "$27x^{3}+54x^{2}+36x+8$", "$27x^{3}+12x^{2}+36x+8$"], 
+          a: 3 },
+        
+        // 38
+        { q: "El $9^\\circ$ término de $(2x+y)^{11}$ es:", 
+          o: ["$1320~x^{3}y^{8}$", "$1320x^{8}y^{3}$", "$1320x^{8}y^{8}$", "$1320~x^{3}y^{3}$", "$1320 x y$"], 
+          a: 0 },
+        
+        // 39
+        { q: "El término medio de $(3x-y)^{10}$ es:", 
+          o: ["$61236~x^{5}y^{5}$", "$-61236x^{5}y^{5}$", "$-61236~x~y$", "$61236~x~y^{5}$", "$61236~x^{5}y$"], 
+          a: 1 },
+        
+        // 40
+        { q: "El término que contiene $y^{8}$ en $(1+y^{2})^{10}$ es:", 
+          o: ["$210~y^{8}$", "$-210~y^{8}$", "$210~y^{6}$", "$210~y^{9}$", "$210~y^{3}$"], 
+          a: 0 },
+        
+        // 41
+        { q: "La suma de los factores de la expresión algebraica $x^{2}-xy-y-1$ es:", 
+          o: ["$2x-y$", "$x+y+1$", "$2x-y+2$", "$x-y$", "$x+y$"], 
+          a: 0 },
+        
+        // 42
+        { q: "Un término después de factorizar la expresión: $18a^{3}-8a(x^{2}+8x+16)$ es:", 
+          o: ["$-a$", "$-2a$", "$a$", "$x$", "$2$"], 
+          a: 2 },
+        
+        // 43
+        { q: "Un factor después de factorizar la expresión: $xz+xw-xzw-yz-yw+yzw$ es:", 
+          o: ["$y-z$", "$y-w$", "$x-y$", "$1-x$", "$x-z$"], 
+          a: 2 },
+        
+        // 44
+        { q: "El producto de coeficientes de un factor de la expresión: $9x^{4}+8x^{2}y^{2}+4y^{4}$ es:", 
+          o: ["$3$", "$6$", "$12$", "$18$", "$21$"], 
+          a: 2 },
+        
+        // 45
+        { q: "El factor cuadrático de mayor suma de coeficientes, después de factorizar el polinomio $x^{4}+4x^{2}+16$ es:", 
+          o: ["$x^{2}+x+2$", "$x^{2}-x+2$", "$x^{2}+9$", "$x^{2}+2x+4$", "$x^{2}+7$"], 
+          a: 3 },
+        
+        // 46
+        { q: "Al factorizar $x^{3}-3x-2$ indique el número de factores primos.", 
+          o: ["$2$", "$4$", "$3$", "$1$", "$5$"], 
+          a: 0 },
+        
+        // 47
+        { q: "Al factorizar $18n^{5}m^{4}p^{3}+30n^{4}m^{3}p^{5}$ se obtiene:", 
+          o: ["$6n^{5}m^{4}p^{3}(3+5p)$", "$6n^{2}m^{4}p^{3}(3n^{3}+5n^{2}p^{2})$", "$6nm^{2}p^{2}(3n^{4}m^{2}+5p)$", "$6n^{3}mp(3n^{2}m^{3}+5nm^{2}p^{3})$", "$6n^{4}m^{3}p^{3}(3mn+5p^{2})$"], 
+          a: 4 },
+        
+        // 48
+        { q: "Al factorizar $x^{2}+x-30$ se obtiene:", 
+          o: ["$(x-6)(x+5)$", "$(x+15)(x-2)$", "$(x+6)(x-5)$", "$(x+2)(x-15)$", "$(x+3)(x-10)$"], 
+          a: 2 },
+        
+        // 49
+        { q: "Al factorizar $x^{2}-6x+9$ es:", 
+          o: ["$(x-9)(x+1)$", "$(x-3)(x-3)$", "$(x+9)(x+1)$", "$(x+3)(x-3)$", "$(x+3)(x+3)$"], 
+          a: 1 },
+        
+        // 50
+        { q: "Después de factorizar $x^{2}+x-12$ es:", 
+          o: ["$(x-6)(x+2)$", "$(x-12)(x-1)$", "$(x-3)(x+4)$", "$(x-4)(x+3)$", "$(x+6)(x-2)$"], 
+          a: 2 },
+        
+        // 51
+        { q: "Al relacionar: \\newline I. $x^{2}-5x-36$ \\newline II. $3x^{2}-5x-2$ \\newline III. $x^{3}-8$ \\newline IV. $4x^{4}-9$ \\newline con: \\newline a) $(x-9)(x+4)$ \\newline b) $(3x+1)(x-2)$ \\newline c) $(x-2)(x^{2}+2x+4)$ \\newline d) $(2x^{2}-3)(2x^{2}+3)$", 
+          o: ["a-I, b-III, c-IV, d-II", "a-I, b-III, c-II, d-IV", "a-III, b-I, c-IV, d-II", "a-I, b-II, c-IV, d-III", "a-II, b-I, c-IV, d-III"], 
+          a: 0 },
+        
+        // 52
+        { q: "Al factorizar $a+ab-1-b$ es:", 
+          o: ["$(a+1)(1-b)$", "$(a-1)(1+b)$", "$(a-1)(1-b)$", "$(b-1)(a-1)$", "$(a+1)(2-b)$"], 
+          a: 1 },
+        
+        // 53
+        { q: "Al factorizar $px+qx+yp+qy$ es:", 
+          o: ["$(p+q)(x+y)$", "$(p-q)(x+y)$", "$(a-1)(x-p)$", "$(p+q)(x-y)$", "$(p-q)(x-y)$"], 
+          a: 0 },
+        
+        // 54
+        { q: "Al factorizar $6x^{2}+3xy-10xy-5y^{2}$ es:", 
+          o: ["$(3x-5y)(y-2x)$", "$(3x+5y)(y-2x)$", "$(3x-5y)(2x+y)$", "$(3x-5y)(2x-y)$", "$(3x-5y)(3x-2y)$"], 
+          a: 2 },
+        
+        // 55
+        { q: "Después de factorizar $4x^{2}+4x-3$ es:", 
+          o: ["$(5x+3)(2x-1)$", "$(2x+3)(3x-1)$", "$(2x+3)(2x+1)$", "$(2x+3)(2x-1)$", "$(2x-3)(2x-1)$"], 
+          a: 3 },
+        
+        // 56
+        { q: "Un equivalente de $2x^{2}-7xy+6y^{2}$ es:", 
+          o: ["$(2x-3y)(x-2y)$", "$(2x-3y)(x+2y)$", "$(2x+3y)(x-2y)$", "$(2x-3y)(x+y)$", "$(3x+5y)(3x-2y)$"], 
+          a: 0 },
+        
+        // 57
+        { q: "El trinomio $x^{2}+px-6$ se factoriza para los valores de $p$:", 
+          o: ["$-1, 1, 7, -5$", "$-1, 1, 5, -5$", "$-1, 1, 5, -6$", "$-1, 2, 6, -6$", "$-1, 1, 7, 5$"], 
+          a: 1 },
+        
+        // 58
+        { q: "Al factorizar $(x-3)^{2}-x-3$ se obtiene los factores:", 
+          o: ["$(x-3)(x+4)$", "$(x+3)(x-4)$", "$(x-3)(x-4)$", "$(x+3)(x+4)$", "$(x-1)(x-6)$"], 
+          a: 4 },
+        
+        // 59
+        { q: "Después de factorizar $3x-24xy^{3}$ uno de sus factores es:", 
+          o: ["$x-2$", "$x^{2}-2xy+4y^{2}$", "$1-2y$", "$x^{2}+2xy+3y^{2}$", "$y-2x$"], 
+          a: 2 },
+        
+        // 60
+        { q: "Después de factorizar $2x^{2}+11x-6$ la suma de términos de sus factores es:", 
+          o: ["$3x-5$", "$2x-5$", "$3x+5$", "$x+2$", "$3x+1$"], 
+          a: 2 },
+        
+        // 61
+        { q: "Al simplificar $\\frac{a-\\frac{1}{b}}{\\frac{1}{a}-b}$ el resultado es:", 
+          o: ["$-1$", "$1$", "$-\\frac{a}{b}$", "$a$", "$b$"], 
+          a: 2 },
+        
+        // 62
+        { q: "Al simplificar $\\frac{1-\\frac{x}{2}}{\\frac{x}{2}-1}$ el resultado es:", 
+          o: ["$1$", "$0$", "$-1$", "$2$", "$-2$"], 
+          a: 2 },
+        
+        // 63
+        { q: "El mínimo común múltiplo (m.c.m.) entre $2a^{2}$; $3a^{4}$; $4a^{3}$ es:", 
+          o: ["$12a^{4}$", "$12a^{12}$", "$12a$", "$12a^{9}$", "$24a^{12}$"], 
+          a: 0 },
+        
+        // 64
+        { q: "El resultado de sumar $(-a^{2})^{3}+(a^{3})^{2}+((-a)^{3})^{2}+(a^{2})^{3}$ es:", 
+          o: ["$a$", "$a^{6}$", "$-2a^{6}$", "$2a^{6}$", "$-a$"], 
+          a: 3 },
+        
+        // 65
+        { q: "El resultado de simplificar $\\frac{8a^{2}+22a-21}{2a+7}$ es:", 
+          o: ["$3a+4$", "$4a+3$", "$4a+11$", "$4a-3$", "$3a-4$"], 
+          a: 3 },
+        
+        // 66
+        { q: "Al simplificar $\\frac{12x^{2}-16xy+5y^{2}}{6x-5y}$ se obtiene:", 
+          o: ["$2x+y$", "$2x-5y$", "$2y-x$", "$2x-y$", "$2y+x$"], 
+          a: 3 },
+        
+        // 67
+        { q: "Al simplificar $\\frac{a^{5}b^{-4}c^{-1}}{a^{-3}b^{-6}c^{3}}$ se obtiene:", 
+          o: ["$\\frac{a^{2}c^{2}}{b^{2}}$", "$\\frac{a^{8}c^{2}}{b^{10}}$", "$\\frac{a^{8}b^{2}}{c^{4}}$", "$\\frac{a^{9}c^{4}}{b^{2}}$", "$a^{8}b^{2}c^{4}$"], 
+          a: 2 },
+        
+        // 68
+        { q: "Al simplificar $\\sqrt{64x^{8}y^{6}z^{4}}$ se obtiene:", 
+          o: ["$8x^{6}y^{4}z^{2}$", "$16x^{4}y^{2}z^{3}$", "$8x^{4}y^{3}z^{2}$", "$32x^{4}y^{6}z^{2}$", "$8x^{4}y^{2}z^{2}$"], 
+          a: 2 },
+        
+        // 69
+        { q: "Al simplificar $\\frac{2}{5}\\sqrt[4]{625m^{7}n^{8}}$ se obtiene:", 
+          o: ["$2mn^{2}\\sqrt[4]{m^{3}}$", "$5mn^{2}\\sqrt[4]{m^{3}}$", "$\\frac{1}{2}m^{3}n^{4}\\sqrt[4]{m^{3}}$", "$\\frac{2}{5}mn^{2}\\sqrt[4]{m^{3}}$", "$mn^{2}\\sqrt[4]{m^{3}}$"], 
+          a: 0 },
+        
+        // 70
+        { q: "Al simplificar $\\frac{x+4}{x^{2}+6x+8}$ se obtiene:", 
+          o: ["$x+2$", "$(x-2)(x+2)$", "$\\frac{1}{x+4}$", "$\\frac{1}{x-2}$", "$\\frac{1}{x+2}$"], 
+          a: 4 },
+        
+        // 71
+        { q: "Al simplificar $\\frac{x^{2}+x-2}{x^{2}-4x+3}$ se obtiene:", 
+          o: ["$\\frac{x+2}{x-3}$", "$\\frac{x-2}{x+3}$", "$\\frac{x-1}{x-3}$", "$\\frac{x+2}{x-1}$", "$\\frac{x-3}{x+2}$"], 
+          a: 0 },
+        
+        // 72
+        { q: "Al simplificar $\\frac{x^{3}y-xy^{3}}{x^{2}y-xy^{2}}$ se obtiene:", 
+          o: ["$\\frac{1}{x+y}$", "$\\frac{x^{2}-y}{x}$", "$x-y$", "$\\frac{x^{2}-y}{x-y^{2}}$", "$x+y$"], 
+          a: 4 },
+        
+        // 73
+        { q: "Al simplificar $\\frac{8x-8y}{16x-16y}$ se obtiene:", 
+          o: ["$\\frac{1}{2}$", "$\\frac{x-y}{x}$", "$2$", "$x-y$", "$x+y$"], 
+          a: 0 },
+        
+        // 74
+        { q: "Al simplificar $\\frac{6x^{2}-3xy}{2xy^{2}-4x^{2}y}$ se obtiene:", 
+          o: ["$-\\frac{3}{2y}$", "$\\frac{2y}{3}$", "$-\\frac{2y}{3}$", "$\\frac{-3x}{2y}$", "$\\frac{3x}{2y}$"], 
+          a: 0 },
+        
+        // 75
+        { q: "El resultado de sumar $(\\frac{2x+y}{2x-y})+(\\frac{5x-5y}{2x-y})+(\\frac{y-x}{2x-y})$ es:", 
+          o: ["$\\frac{1}{x+y}$", "$3$", "$\\frac{1}{3}$", "$\\frac{x^{2}-y}{x-y^{2}}$", "$\\frac{1}{x-y}$"], 
+          a: 1 },
+        
+        // 76
+        { q: "Al multiplicar $(\\frac{9}{3x+3})(\\frac{x^{2}-1}{6})$ se obtiene:", 
+          o: ["$\\frac{2}{x+1}$", "$x+1$", "$\\frac{x+1}{3}$", "$\\frac{3}{x-1}$", "$\\frac{x-1}{2}$"], 
+          a: 4 },
+        
+        // 77
+        { q: "Al multiplicar $(\\frac{8x^{2}+10x+3}{4x^{2}+4x+1})(\\frac{6x^{2}+x-1}{9x^{2}+9x-4})$ se obtiene:", 
+          o: ["$\\frac{4x-3}{3x+4}$", "$\\frac{4x-3}{3x-4}$", "$\\frac{4x+3}{3x+4}$", "$\\frac{3x+4}{4x+3}$", "$\\frac{3x+4}{4x-3}$"], 
+          a: 2 },
+        
+        // 78
+        { q: "El resultado de sumar $(\\frac{6x}{x^{2}-9})+(\\frac{x}{x+3})$ se obtiene:", 
+          o: ["$\\frac{1}{x+3}$", "$\\frac{x-3}{x}$", "$\\frac{x}{x+3}$", "$\\frac{x}{x-3}$", "$\\frac{1}{x-3}$"], 
+          a: 3 },
+        
+        // 79
+        { q: "Al dividir $(\\frac{x^{2}-9}{x^{2}+2x-3})\\div(\\frac{x^{2}+6x-27}{x^{2}-10x+9})$ se obtiene:", 
+          o: ["$\\frac{x}{x+9}$", "$\\frac{x-9}{x+9}$", "$\\frac{x+9}{x-9}$", "$\\frac{9}{x-9}$", "$\\frac{x}{x-9}$"], 
+          a: 1 },
+        
+        // 80
+        { q: "El resultado de $\\frac{x^{2}+7x-18}{x^{2}+6x-27}\\div\\frac{x^{2}+11x+24}{x^{2}+5x-24}$ es:", 
+          o: ["$\\frac{x+3}{x-2}$", "$\\frac{x-2}{x+3}$", "$\\frac{x+2}{x+3}$", "$\\frac{x+2}{x-3}$", "$\\frac{x-3}{x+2}$"], 
+          a: 1 },
+        
+        // 81
+        { q: "Al resolver la ecuación $3(2x-1)-2(5-x)=3$ se obtiene:", 
+          o: ["$2$", "$\\frac{1}{3}$", "$\\frac{1}{2}$", "$-\\frac{1}{2}$", "$-2$"], 
+          a: 0 },
+        
+        // 82
+        { q: "Determinar el valor de $m$ en la ecuación $(m-2)x^{2}-3mx+1=0$ para que la suma de raíces sea igual a su producto de raíces.", 
+          o: ["$m=2$", "$m=\\frac{1}{3}$", "$m=-\\frac{1}{3}$", "$m=\\sqrt{3}$", "$m=\\frac{\\sqrt{3}}{3}$"], 
+          a: 1 },
+        
+        // 83
+        { q: "El valor de $x$ que cumple con la ecuación $\\frac{3x}{8}-\\frac{x}{2}=-\\frac{3}{2}$ es:", 
+          o: ["$-12$", "$-\\frac{3}{8}$", "$-\\frac{1}{12}$", "$\\frac{3}{8}$", "$12$"], 
+          a: 4 },
+        
+        // 84
+        { q: "El valor de $x$ que cumple con la igualdad $\\frac{5}{3}x-\\frac{1}{6}=x+\\frac{1}{4}$ es:", 
+          o: ["$-\\frac{5}{12}$", "$-\\frac{5}{8}$", "$-\\frac{3}{8}$", "$\\frac{5}{8}$", "$\\frac{5}{12}$"], 
+          a: 3 },
+        
+        // 85
+        { q: "Al resolver la ecuación $\\frac{3x+5}{4}-\\frac{2x-1}{3}=2$ se obtiene:", 
+          o: ["$x=-5$", "$x=-\\frac{2}{5}$", "$x=5$", "$x=\\frac{2}{5}$", "$x=\\frac{1}{2}$"], 
+          a: 2 },
+        
+        // 86
+        { q: "Al resolver la ecuación $\\frac{x+2}{9}-3=\\frac{x-8}{3}$ se obtiene:", 
+          o: ["$x=2$", "$x=-\\frac{3}{2}$", "$x=\\frac{1}{2}$", "$x=-2$", "$x=-\\frac{1}{2}$"], 
+          a: 4 },
+        
+        // 87
+        { q: "Al resolver la ecuación $\\frac{x+3}{6}-\\frac{4}{3}=\\frac{x-2}{4}$ se obtiene:", 
+          o: ["$x=\\frac{1}{4}$", "$x=-\\frac{1}{6}$", "$x=4$", "$x=-4$", "$x=-\\frac{1}{4}$"], 
+          a: 3 },
+        
+        // 88
+        { q: "De la ecuación $\\frac{9}{3x-2}=1$ el valor de $x$ que satisface es:", 
+          o: ["$\\frac{1}{2}$", "$-\\frac{11}{3}$", "$\\frac{3}{11}$", "$\\frac{11}{3}$", "$-\\frac{3}{11}$"], 
+          a: 3 },
+        
+        // 89
+        { q: "De la ecuación $-\\frac{2}{x}-\\frac{4}{5}=\\frac{3}{x}$ el valor de $x$ que satisface es:", 
+          o: ["$-\\frac{3}{5}$", "$-\\frac{25}{4}$", "$\\frac{3}{4}$", "$\\frac{5}{4}$", "$-\\frac{3}{4}$"], 
+          a: 1 },
+        
+        // 90
+        { q: "Al resolver la siguiente ecuación $\\frac{3}{2x}-\\frac{7}{5}=\\frac{4}{5x}-\\frac{5}{2}$ se obtiene:", 
+          o: ["$-\\frac{1}{5}$", "$-\\frac{7}{11}$", "$\\frac{7}{11}$", "$7$", "$-\\frac{11}{7}$"], 
+          a: 1 },
+        
+        // 91
+        { q: "Las raíces de la ecuación $x^{2}-x-12=0$ son:", 
+          o: ["$-3$ y $-4$", "$3$ y $4$", "$-3$ y $\\frac{1}{4}$", "$-3$ y $4$", "$3$ y $-4$"], 
+          a: 3 },
+        
+        // 92
+        { q: "Al resolver la ecuación $6x^{2}+x=12$ se obtiene:", 
+          o: ["$-\\frac{3}{2}$ y $-\\frac{4}{3}$", "$-3$ y $-4$", "$-\\frac{3}{2}$ y $\\frac{4}{3}$", "$-\\frac{3}{4}$ y $\\frac{2}{3}$", "$\\frac{3}{4}$ y $-\\frac{2}{3}$"], 
+          a: 2 },
+        
+        // 93
+        { q: "Al resolver la ecuación $2x^{2}+3x=2$ se obtiene:", 
+          o: ["$-\\frac{1}{2}$ y $-2$", "$-2$ y $2$", "$-\\frac{1}{2}$ y $\\frac{1}{2}$", "$2$ y $-\\frac{1}{2}$", "$\\frac{1}{2}$ y $-2$"], 
+          a: 4 },
+        
+        // 94
+        { q: "Al resolver la ecuación $4x^{2}+x=0$ se obtiene:", 
+          o: ["$\\frac{1}{4}$ y $0$", "$-4$ y $0$", "$-\\frac{1}{4}$ y $\\frac{1}{4}$", "$2$ y $0$", "$-\\frac{1}{4}$ y $0$"], 
+          a: 4 },
+        
+        // 95
+        { q: "Al resolver la ecuación $10x^{2}-15x=0$ se obtiene:", 
+          o: ["$-\\frac{3}{2}$ y $0$", "$-\\frac{2}{3}$ y $0$", "$-\\frac{3}{2}$ y $\\frac{3}{2}$", "$\\frac{2}{3}$ y $0$", "$\\frac{3}{2}$ y $0$"], 
+          a: 4 },
+        
+        // 96
+        { q: "Determinar el valor de $m$ en la ecuación $8x^{2}+2x-(\\frac{m-1}{2})=0$ de manera que el producto de las raíces sea $-\\frac{15}{8}$.", 
+          o: ["$m=2$", "$m=30$", "$m=\\frac{m}{4}$", "$m=31$", "$m=-31$"], 
+          a: 3 },
+        
+        // 97
+        { q: "Considerando el sistema de ecuaciones $\\begin{cases}x+2y=1\\\\ 3x-4y=8\\end{cases}$ entonces el valor verdadero que demuestra la igualdad es:", 
+          o: ["$x=-4y$", "$x=2-y$", "$x=3+y$", "$y=\\frac{x}{4}$", "$y=\\frac{x}{2}$"], 
+          a: 0 },
+        
+        // 98
+        { q: "Una de las raíces de la ecuación $x^{2}-5x+3m=0$ es $-1$. El valor de $m^{2}$ es:", 
+          o: ["$4$", "$9$", "$16$", "$36$", "$1$"], 
+          a: 0 },
+        
+        // 99
+        { q: "Si $m$ y $n$ son raíces de la ecuación $x^{2}+x-6=0$, entonces el valor de $(m+7)(n+7)$ es:", 
+          o: ["$49$", "$50$", "$36$", "$-50$", "$\\frac{30}{7}$"], 
+          a: 2 },
+        
+        // 100
+        { q: "En la ecuación $x^{2}+mx+27=0$, para que una de las raíces sea el cuadrado de la otra, el valor de $m$ es:", 
+          o: ["$-3$", "$-9$", "$-12$", "$3$", "$6$"], 
+          a: 2 },
+        
+        // 101
+        { q: "El resultado de $x=|-5|-|-5|$ es:", 
+          o: ["$0$", "$10$", "$1$", "$-10$", "Ninguna"], 
+          a: 0 },
+        
+        // 102
+        { q: "El conjunto de solución de la inecuación $|x|<5$ es:", 
+          o: ["$0<x<5$", "$x<-5$", "$-5<x<5$", "$x<5$", "Ninguna"], 
+          a: 2 },
+        
+        // 103
+        { q: "El conjunto de solución de la inecuación $|x-4|<2$ es:", 
+          o: ["$x<6$", "$x<-2$", "$0<x<6$", "$2<x<6$", "$-6<x<6$"], 
+          a: 3 },
+        
+        // 104
+        { q: "El conjunto de solución de la inecuación $2x+5>4x-9$ es:", 
+          o: ["$x>7$", "$x<7$", "$x=7$", "$0<x<7$", "$-7<x<0$"], 
+          a: 1 },
+        
+        // 105
+        { q: "El conjunto de solución de la inecuación $\\frac{2x+1}{8}<\\frac{3x-4}{3}$ es:", 
+          o: ["$x>0$", "$x>\\frac{35}{18}$", "$x<\\frac{35}{18}$", "$x=\\frac{35}{18}$", "$x>\\frac{18}{35}$"], 
+          a: 1 },
+        
+        // 106
+        { q: "El conjunto de solución de la inecuación $|\\frac{1}{x}-2|>1$ es:", 
+          o: ["$x<3$", "$1<x<3$", "$1<x<\\frac{1}{3}$", "$-3<x<1$", "Ninguna"], 
+          a: 4 },
+        
+        // 107
+        { q: "El conjunto de solución de la inecuación $\\frac{x+10}{6}+1-\\frac{x}{4}>\\frac{4-5x}{6}-1$ es:", 
+          o: ["$9x>-12$", "$9x>-36$", "$9x>-42$", "$9x>-2$", "$9x<-36$"], 
+          a: 1 },
+        
+        // 108
+        { q: "La solución de la ecuación es: $|x+3|=|4-x|$", 
+          o: ["$2$", "$\\frac{1}{2}$", "$-3; -4$", "$3<x<4$", "$\\frac{1}{4}$"], 
+          a: 1 },
+        
+        // 109
+        { q: "¿Cuál de los siguientes valores cumple con: $x<-7$?", 
+          o: ["$-\\frac{7}{2}$", "$7$", "$-7$", "$-\\frac{1}{7}$", "$-10$"], 
+          a: 4 },
+        
+        // 110
+        { q: "¿Cuál de las siguientes afirmaciones es verdadera, si $-10x<90$?", 
+          o: ["$x<-9$", "$x=9$", "$x>-9$", "$x>9$", "$x<9$"], 
+          a: 2 },
+        
+        // 111
+        { q: "El conjunto solución de $2x-1\\le3$ es:", 
+          o: ["$x\\le-2$", "$x\\le2$", "$x\\ge-2$", "$x\\ge2$", "$x<2$"], 
+          a: 1 },
+        
+        // 112
+        { q: "El conjunto solución de la desigualdad $3(2x-5)-7(1-x)\\ge-4(4-3x)$ es:", 
+          o: ["$x\\le-6$", "$x\\le6$", "$x\\ge-6$", "$x\\ge6$", "$x>6$"], 
+          a: 3 },
+        
+        // 113
+        { q: "El conjunto solución de la desigualdad $\\frac{5(x+4)}{2}-\\frac{4(x+1)}{3}<9$ es:", 
+          o: ["$x<-2$", "$x>2$", "$x\\ge2$", "$x<\\frac{2}{7}$", "$x>-2$"], 
+          a: 3 },
+        
+        // 114
+        { q: "El conjunto de la solución de la desigualdad $\\frac{3}{2}-\\frac{x}{2}>\\frac{x}{7}+\\frac{11}{14}$ es:", 
+          o: ["$x<-\\frac{10}{9}$", "$x>\\frac{10}{9}$", "$x<\\frac{9}{10}$", "$x>-\\frac{9}{10}$", "$x<\\frac{10}{9}$"], 
+          a: 4 },
+        
+        // 115
+        { q: "El conjunto de solución de $\\frac{1}{x-5}\\le1$ es:", 
+          o: ["$(-\\infty,4)$", "$(x>-5)$", "$(-\\infty,5)$", "$(-\\infty,5)\\cup[6;+\\infty)$", "$[-5,5]$"], 
+          a: 3 },
+        
+        // 116
+        { q: "El conjunto de solución de la inecuación es: $|x+6|<2x-1$", 
+          o: ["$(7,\\infty)$", "$(5,\\infty)$", "$(-6, \\infty)$", "$(8, \\infty)$", "$(9, \\infty)$"], 
+          a: 0 },
+        
+        // 117
+        { q: "El conjunto de solución de la inecuación es: $|4x+3|>x+2$", 
+          o: ["$(-\\infty;-1)\\cup(-\\frac{1}{3};\\infty)$", "$(\\infty;+1)\\cup(-\\frac{1}{3};\\infty)$", "$(-\\infty;-2)\\cup(+\\frac{1}{3};\\infty)$", "$(\\infty;+2)\\cup(-\\frac{1}{2};\\infty)$", "$(\\infty;+3)\\cup(-\\frac{1}{3};\\infty)$"], 
+          a: 0 },
+        
+        // 118
+        { q: "El conjunto de solución de la inecuación es: $|x^{2}-x|>-2$", 
+          o: ["$(-\\infty;0)$", "$(0;+\\infty)$", "$(-\\infty;+\\infty)$", "$(-1;+1)$", "$(1;\\infty)$"], 
+          a: 2 },
+        
+        // 119
+        { q: "El conjunto de solución de la inecuación es: $\\frac{|x-4|}{4-|x|}>-1$", 
+          o: ["$(4;-4)$", "$(-4; 4)$", "$(-2; 2)$", "$(2; 2)$", "$(-1;2)$"], 
+          a: 1 },
+        
+        // 120
+        { q: "El conjunto de solución de la inecuación es: $|x|>x$", 
+          o: ["$(-\\infty;0)$", "$(\\infty;1)$", "$(-2;\\infty)$", "$(-\\infty;-2)$", "$(-\\infty;-1)$"], 
+          a: 0 }
+    ],
         
         fisica: [
-            {q: "Redondee la siguiente cantidad a 3 cifras significativas: 8,66501", o: ["8,66", "8,67", "8,665", "8,70"], a: 1},
-            {q: "La notación científica está basada en:", o: ["Potencias del número 10", "Potencias logarítmicas", "Potencias del número e", "Ninguna"], a: 0},
-            {q: "Si observamos el crecimiento de un pequeño gato. Es un fenómeno:", o: ["Físico", "Matemático", "Histórico", "Biológico"], a: 3},
-            {q: "Una naranja expuesta al medio ambiente (sol, lluvia, humedad, frio, etc.). Es un fenómeno:", o: ["Químico", "Biológico", "Estático", "Físico"], a: 0},
-            {q: "La deformación de un alambre de aluminio (sin romperse), es un fenómeno:", o: ["Químico", "Biológico", "Histórico", "Físico"], a: 3},
-            {q: "¿Cuantos centímetros cúbicos tienen un litro?", o: ["100 cm³", "1500 cm³", "1100 cm³", "Ninguna (1000 cm³)"], a: 3},
-            {q: "Quemar el papel, la leña y el cartón, se trata de un fenómeno:", o: ["Biológico", "Óptico", "Físico", "Químico"], a: 3},
-            {q: "Un cigarro encendido se considera un fenómeno:", o: ["Químico", "Biológico", "Físico", "Social"], a: 0},
-            {q: "Redondee la siguiente cantidad a 2 cifras significativas: 0,012569", o: ["1,25", "1,26", "0,012", "0,013"], a: 3},
-            {q: "El envejecimiento de un animal se considera un fenómeno:", o: ["Químico", "Biológico", "Físico", "Social"], a: 1}
-        ],
+    {q: "La física es una ciencia experimental que estudia a todos los:", o: ["fenómenos físicos", "números arábicos", "fenómenos químicos"], a: 0},
+    {q: "La física clásica estudia:", o: ["Estática", "Cinemática", "Dinámica", "Todas las anteriores", "Ninguna"], a: 3},
+    {q: "¿Cuál de los temas abajo mencionados, son considerados como física moderna?", o: ["Acústica", "Cinemática", "Óptica", "Cuántica"], a: 3},
+    {q: "La relatividad se estudia en:", o: ["Física clásica", "Física moderna", "Física acústica"], a: 1},
+    {q: "Si observamos el crecimiento de un pequeño gato. Es un fenómeno:", o: ["Físico", "Matemático", "Histórico", "Biológico"], a: 3},
+    {q: "Una naranja expuesta al medio ambiente (sol, lluvia, humedad, frio, etc.). Es un fenómeno:", o: ["Químico", "Biológico", "Estático", "Físico"], a: 0},
+    {q: "La deformación de un alambre de aluminio (sin romperse), es un fenómeno:", o: ["Químico", "Biológico", "Histórico", "Físico"], a: 3},
+    {q: "Quemar el papel, la leña y el cartón, se trata de un fenómeno:", o: ["Biológico", "Óptico", "Físico", "Químico"], a: 3},
+    {q: "Un cigarro encendido se considera un fenómeno:", o: ["Químico", "Biológico", "Físico", "Social"], a: 0},
+    {q: "El envejecimiento de un animal se considera un fenómeno:", o: ["Químico", "Biológico", "Físico", "Social"], a: 1},
+    {q: "El crecimiento de una planta es un fenómeno:", o: ["Químico", "Físico", "Matemático", "Biológico"], a: 3},
+    {q: "La deformación de un resorte, es un fenómeno:", o: ["Químico", "Biológico", "Físico", "Social"], a: 2},
+    {q: "Un fierro de construcción expuesto al medio ambiente (oxidación) es un fenómeno:", o: ["Biológico", "Estático", "Físico", "Químico"], a: 3},
+    {q: "La deformación de un trampolín de madera en las piscinas es un fenómeno:", o: ["Químico", "Biológico", "Físico", "Social"], a: 2},
+    {q: "Si calentamos un litro de agua (cambio de temperatura), este es un fenómeno:", o: ["Químico", "Físico", "Biológico", "Matemático"], a: 1},
+    {q: "Un litro de agua en su estado sólido (hielo), es un fenómeno:", o: ["Químico", "Biológico", "Físico", "Social"], a: 2},
+    {q: "La longitud, el tiempo y la masa son consideradas como:", o: ["Unidades matemáticas", "Unidades derivadas", "Magnitudes vectoriales", "Magnitudes fundamentales o básicas"], a: 3},
+    {q: "¿Cuál de estas unidades son consideradas como fundamentales o básicas?", o: ["longitud", "masa", "tiempo", "Todas las anteriores"], a: 3},
+    {q: "¿Cuál de estas magnitudes físicas es derivada?", o: ["longitud", "Potencia", "tiempo", "masa"], a: 1},
+    {q: "¿Cuál de estas magnitudes se considera derivadas?", o: ["Trabajo", "longitud", "masa", "tiempo"], a: 0},
+    {q: "¿Cuál de estas unidades son consideradas como derivadas?", o: ["Longitud", "Velocidad", "Tiempo", "Masa"], a: 1},
+    {q: "Las magnitudes físicas derivadas como velocidad, son las que dependen de:", o: ["Longitud y tiempo", "Masa", "Trabajo", "Ninguna de las anteriores"], a: 3},
+    {q: "Las magnitudes físicas fundamentales, son las que dependen de:", o: ["Ángulos", "Líneas rectas", "Distancias", "Ninguna"], a: 3},
+    {q: "La notación científica está basada en:", o: ["Potencias del número 10", "Potencias logarítmicas", "Potencias del número e"], a: 0},
+    {q: "Redondee la siguiente cantidad a 3 cifras significativas: 8,66501", o: ["8,66", "8,67", "8,665", "8,70"], a: 1},
+    {q: "Redondee la siguiente cantidad a 2 cifras significativas: 0,012569", o: ["1,25", "1,26", "0,012", "0,013"], a: 3},
+    {q: "Redondee la siguiente cantidad a 3 cifras significativas: 4,8529", o: ["4,853", "4,852", "4,85", "4,86"], a: 2},
+    {q: "Si medimos el área de un terreno que es de 8805 m², cuantas cifras significativas tiene:", o: ["1", "2", "3", "4"], a: 3},
+    {q: "El objetivo del análisis dimensional es:", o: ["Deducir fórmulas a partir de los datos experimentales", "Comprobar la veracidad de fórmulas derivadas", "Determinar las magnitudes derivadas en función de las básicas", "Todas las anteriores"], a: 3},
+    {q: "La ecuación del análisis LT⁻¹, corresponde a:", o: ["Velocidad", "Fuerza", "Trabajo", "Aceleración"], a: 0},
+    {q: "La ecuación del análisis LT⁻², corresponde a:", o: ["Velocidad", "Fuerza", "Trabajo", "Aceleración"], a: 3},
+    {q: "¿Cuál es la ecuación correcta de la Aceleración?", o: ["L T⁻²", "L T", "L⁻¹ T", "LT²"], a: 0},
+    {q: "La ecuación del análisis dimensional ML⁻³, corresponde a:", o: ["Velocidad", "Fuerza", "Trabajo", "Densidad"], a: 3},
+    {q: "La cantidad de 300×10¹² m corresponde al prefijo:", o: ["Megametro", "Kilometro", "Terámetro", "Micrómetro", "Ninguna"], a: 2},
+    {q: "La cantidad de 7×10⁻⁶ m corresponde al prefijo:", o: ["Megametro", "Kilometro", "Milímetro", "Nanómetro", "Micrómetro"], a: 4},
+    {q: "26×10⁻¹² m, es un equivalente al prefijo:", o: ["26 Terametros", "26 Megametros", "26 Micrómetros", "26 Picómetros"], a: 3},
+    {q: "La cantidad de 30×10⁶ m corresponde al prefijo:", o: ["Megametro", "Terámetro", "Milímetro", "Micrómetro"], a: 0},
+    {q: "La cantidad 65×10¹² m. corresponde al prefijo:", o: ["Megametro", "Terámetro", "Milímetro", "Micrómetro"], a: 1},
+    {q: "10 Peta metros a cuantos metros equivalen:", o: ["10×10⁶", "10×10⁹", "10×10¹²", "10×10¹⁵"], a: 3},
+    {q: "¿Cuál es el valor equivalente a 10 Micrometros?", o: ["10×10⁻² m", "10×10⁻⁴ m", "10×10¹ m", "10×10⁻⁶ m"], a: 3},
+    {q: "Cuál es el valor equivalente a 20 picómetros?", o: ["20 ×10¹⁰ m", "20 ×10⁻¹² m", "20 ×10⁻⁸ m", "20 ×10⁻⁶ m"], a: 1},
+    {q: "Los 410 Terametros equivalen al sufijo:", o: ["410×10⁻⁶", "410×10³", "410×10⁶", "410×10¹²"], a: 3},
+    {q: "Los 0,21 Terametros equivalen a la expresión:", o: ["210×10⁻⁶", "210×10⁻³", "210×10⁶", "210×10⁹"], a: 3},
+    {q: "Los 210 micrómetros, corresponden en metros a:", o: ["210 ×10⁻⁶", "210 ×10⁻³", "210×10⁶", "210×10⁸"], a: 0},
+    {q: "A cuántos metros equivalen 25 Megametros?", o: ["25×10⁶", "25×10⁹", "25×10³", "25×10"], a: 0},
+    {q: "A cuántos metros equivalen 17 Megametros?", o: ["17×10⁻¹", "17×10⁻²", "17×10³", "17×10⁵", "17×10⁶"], a: 4},
+    {q: "30 Megametros ¿a cuántos metros equivale?", o: ["30×10⁶", "30×10⁹", "30×10¹²", "30×10¹⁵"], a: 0},
+    {q: "100 Megametros, ¿a cuántos metros equivale?", o: ["0,01", "0,1", "1", "10", "1×10⁸"], a: 4},
+    {q: "Cuál es el valor correcto de 12 Gigametros:", o: ["12×10⁹ m", "12×10² m", "12×10³ m", "12×10¹ m"], a: 0},
+    {q: "YOTTA (prefijo del Sistema Internacional para manejo de números muy grandes) equivale al factor:", o: ["10¹⁰", "10¹²", "10¹³", "10²⁰", "10²⁴"], a: 4},
+    {q: "El número 2,1×10⁻⁴; se expresa de la siguiente forma:", o: ["0,00021", "0,00210", "0,02100", "0,02010"], a: 0},
+    {q: "Si el resultado de la división 500000000/250, podemos escribir de la siguiente forma:", o: ["2×10⁻⁵", "2×10⁻¹", "2×10⁶", "2×10⁵"], a: 2},
+    {q: "¿Cuantos centímetros cúbicos [cc] tienen un litro?", o: ["Ninguna", "100 cc", "10 cc", "1 cc"], a: 0},
+    {q: "¿Cuantos centímetros cúbicos tienen un litro?", o: ["100 cm³", "1500 cm³", "1100 cm³", "Ninguna"], a: 3},
+    {q: "¿Cuántos milímetros equivalen a un metro?", o: ["1 mm", "10 mm", "100 mm", "1000 mm"], a: 3},
+    {q: "¿A cuántos milímetros equivalen 200 cm?", o: ["2mm", "20mm", "200mm", "2000mm"], a: 3},
+    {q: "¿A cuántos centímetros equivalen 35 metros?", o: ["35 cm", "350 cm", "3500 cm", "Ninguno"], a: 2},
+    {q: "A cuántos litros equivalen 10 metros cúbicos de agua?", o: ["1 l.", "4 l", "100 l", "400 l", "10000 l"], a: 4},
+    {q: "Cuantas pulgadas tiene un pie?", o: ["12 pulgadas", "11 pulgadas", "10 pulgadas", "15 pulgadas"], a: 0},
+    {q: "¿A cuántas pulgadas equivale un pie?", o: ["10", "25", "30", "100", "12"], a: 4},
+    {q: "En el sistema Ingles, la masa de un cuerpo se expresa en:", o: ["Kilogramo", "Gramo", "Libra", "Pie"], a: 2},
+    {q: "Convertir 0,908 Kg a libras:", o: ["0,1", "1", "2", "3"], a: 2},
+    {q: "1000 libras, a cuantos kilogramos corresponden:", o: ["400", "420", "453.6", "480"], a: 2},
+    {q: "¿A cuántas onzas equivale 908 g?", o: ["32", "40", "50", "60"], a: 0},
+    {q: "¿A cuántas libras equivalen 20 arrobas?", o: ["100", "200", "400", "500"], a: 3},
+    {q: "¿A cuántas libras equivalen 40 arrobas?", o: ["10", "100", "1000", "10000"], a: 2},
+    {q: "¿10 arrobas, a cuantas libras equivalen?", o: ["220", "250", "260", "290"], a: 1},
+    {q: "La velocidad de un móvil es de 5 m/s; determinar en km/h:", o: ["16", "20", "25", "Ninguno"], a: 3},
+    {q: "La velocidad de un móvil es de 5 m/s; determinar en m/min:", o: ["300", "400", "500", "600"], a: 0},
+    {q: "La velocidad de un móvil es de 5 m/s; determinar en cm/min:", o: ["300", "30", "3", "30000"], a: 3},
+    {q: "La velocidad de un móvil es de 5 m/s; calcular en mm/min:", o: ["30", "300", "3000", "30000", "300000"], a: 4},
+    {q: "La velocidad de un móvil es de 10 pies/s; determinar en pul/s:", o: ["100", "120", "500", "600"], a: 1},
+    {q: "La velocidad de un móvil es de 2,54 Km/h, ¿a cuantas pul/h corresponde?", o: ["100000", "100", "1000", "10000"], a: 0},
+    {q: "La capacidad de un aire acondicionado es de 20000 BTU, su valor correspondiente en kilocalorías es:", o: ["500 kcal", "900 kcal", "5040 kcal", "6020 kcal"], a: 2},
+    {q: "La unidad de calor B.T.U. es del sistema:", o: ["Métrico", "Ruso", "Franco", "Ingles"], a: 3},
+    {q: "Los grados Rankine son considerados como un sistema:", o: ["Inglés", "métrico", "numérico", "gradual"], a: 0},
+    {q: "La masa es una magnitud:", o: ["Escalar", "Tensorial", "Geométrica", "Vectorial"], a: 0},
+    {q: "El tiempo es una magnitud:", o: ["Escalar", "Vectorial", "Geométrica", "Mixta"], a: 0},
+    {q: "El tiempo se considera como:", o: ["Unidades matemáticas", "Unidades derivadas", "Magnitudes vectoriales", "Magnitudes escalares"], a: 3},
+    {q: "La fuerza gravitacional es una magnitud:", o: ["Escalar", "Tensorial", "Mixta", "Vectorial"], a: 3},
+    {q: "La fuerza es una magnitud:", o: ["Numérica", "Geométrica", "Tensorial", "Escalar", "Vectorial"], a: 4},
+    {q: "La aceleración de la gravedad es una magnitud:", o: ["Escalar", "Vectorial", "Tensorial", "Mixta"], a: 1},
+    {q: "El peso es una magnitud:", o: ["Escalar", "Vectorial", "Mixta", "Geométrica"], a: 1},
+    {q: "Los vectores coplanares son aquellos que se encuentran en:", o: ["Un mismo plano", "En dos planos", "En tres planos"], a: 0},
+    {q: "Un vector unitario se caracteriza por tener módulo igual a:", o: ["2", "4", "1,5", "0,5", "1"], a: 4},
+    {q: "Un vector que tiene su versor (vector unitario), se caracteriza por tener:", o: ["Vector Velocidad", "Vector Aceleración", "Vector Fuerza", "Módulo = 1"], a: 3},
+    {q: "La Flecha de un vector indica el:", o: ["Sentido", "Dirección", "Modulo", "Puntos"], a: 0},
+    {q: "La dirección de un vector se define por su:", o: ["aristas", "recta", "círculo", "puntos", "Ángulo"], a: 4},
+    {q: "La dirección de un vector se calcula:", o: ["Por el ángulo (θ)", "Por recta", "Por círculo", "Por puntos"], a: 0},
+    {q: "La suma entre dos vectores perpendiculares se calcula aplicando:", o: ["Suma algebraica", "Teorema de del resto", "Ley de senos", "Teorema de Pitágoras"], a: 3},
+    {q: "Cuando las direcciones de más de 2 vectores terminan en un mismo punto:", o: ["vectores libres", "vectores deslizantes", "vectores localizados", "Vectores concurrentes"], a: 3},
+    {q: "Cuando 2 o más vectores cortan sus líneas de acción en un solo punto:", o: ["Deslizantes", "Localizados", "Libres", "Concurrentes"], a: 3},
+    {q: "El Angulo entre dos vectores A y B, se calcula mediante:", o: ["Sen(A* B/|A|*|B|)", "Sen⁻¹(A* B/|A|*|B|)", "cos(A* B/|A|*|B|)", "cos⁻¹(A·B / |A|·|B|)"], a: 3},
+    {q: "¿Cuál es el módulo de un vector cuyo extremo es P1 (6; 8) y cuyo origen P0 (0; 0)?", o: ["10", "7", "4", "8"], a: 0},
+    {q: "Dados los vectores a = 4i + 11j; b = - 7i - 4j; el vector resultante de a – b es:", o: ["-13i + 14j", "11i + 15j", "13i + 16j", "-13i + 16j"], a: 1},
+    {q: "Dado un vector A = 5x + 5y, la dirección de este vector será:", o: ["40°", "45°", "50°", "60°"], a: 1},
+    {q: "Dados dos vectores a = 2i + 3j + 3k; b = ni +10j - 4k, para que sean perpendiculares n es:", o: ["9", "-9", "5", "-5"], a: 1},
+    {q: "Dados A = 2i + nj - 3k; B = 2i + 10j + 4k, para ser perpendiculares n debe ser:", o: ["5/4", "5/3", "4/5", "3/5"], a: 2},
+    {q: "3 Vectores lineales en el eje 'x' de 9; 12; -13 unidades, la suma resultante es:", o: ["6", "7", "8", "9"], a: 2},
+    {q: "Dados 2 vectores A = 3i + 6j, B = -3i - 3j, el módulo de la suma A + B es:", o: ["10", "7", "8", "4", "3"], a: 4},
+    {q: "Dados vectores A y B de módulo 8 y 5 con la misma dirección y sentido:", o: ["30", "20", "13", "7"], a: 2},
+    {q: "Suma resultante de vectores lineales en 'y' de 100, 400 y -300 unidades:", o: ["200", "250", "300", "400"], a: 0},
+    {q: "Suma resultante de vectores lineales en 'x' de 4; 8 y -5 unidades:", o: ["6", "7", "8", "9"], a: 1},
+    {q: "Dados A = 3i + 6j, B = -i + 2j; el producto escalar A · B es:", o: ["1", "3", "4", "5", "9"], a: 4},
+    {q: "Dos vectores perpendiculares cuyos módulos son 3 y 4 unidades, la resultante es:", o: ["12", "15", "25", "7", "5"], a: 4},
+    {q: "Dados a = 3i + 6j, b = -i + 2j; el módulo de la resultante (a – b) es:", o: ["√32", "25", "20", "10"], a: 0},
+    {q: "Dados B y C de módulo 10 y 2 con misma dirección y sentido, su suma es:", o: ["20", "8", "12", "7"], a: 2},
+    {q: "Dos vectores paralelos de un mismo sentido de 3 y 4 unidades, la suma es:", o: ["12", "15", "25", "7"], a: 3},
+    {q: "Dados a = 7i + 6j, b = -3i - 3j, la resultante en modulo R (a+b) es:", o: ["10", "7", "8", "5", "Ninguna"], a: 3},
+    {q: "La suma entre dos vectores perpendiculares se calcula mediante:", o: ["Suma algebraica", "Teorema del resto", "Ley de los senos", "Teorema de Pitágoras"], a: 3},
+    {q: "Dos fuerzas perpendiculares de 6 y 8 N. El valor de la resultante es:", o: ["2 N", "14 N", "22 N", "48 N", "10 N"], a: 4},
+    {q: "Dados B y C de módulo 10 y 12 con misma dirección y sentido:", o: ["30", "20", "22", "7"], a: 2},
+    {q: "Un vector unitario se caracteriza por tener:", o: ["Modulo", "Dirección", "Sentido", "Un valor unitario (1)"], a: 3},
+    {q: "Los vectores coplanares son los que se encuentran en:", o: ["Un mismo plano", "En dos planos", "En tres planos"], a: 0},
+    {q: "¿Cuál de estos ejemplos se considera una magnitud básica o fundamental?", o: ["3 N", "3 s", "3 pul²", "10 d"], a: 1},
+    {q: "El termómetro más común en nuestro medio es de:", o: ["Hidrogeno", "Oxigeno", "Magnesio", "Ninguna"], a: 3},
+    {q: "¿Cuantas clases de escalas de temperaturas usamos comúnmente?", o: ["6", "3", "1", "2", "4"], a: 4},
+    {q: "Cuál es la ecuación correcta para transformar de °C a °F?", o: ["°F = 9/5 °C - 32", "°F = 9/5 °K - 32", "°F = 5/9 °C + 32", "°F = 5/9 °C – 32", "°F = 9/5 °C + 32"], a: 4},
+    {q: "La escala Kelvin tiene una división igual que la escala Celcius y es equivalente a:", o: ["95", "97", "105", "107", "100"], a: 4},
+    {q: "La temperatura de congelamiento en grados Celsius corresponde a:", o: ["100", "0", "32", "273"], a: 1},
+    {q: "La temperatura de congelamiento en grados kelvin corresponde a:", o: ["100", "0", "32", "273"], a: 3},
+    {q: "Cero grados Celcius. ¿Cuantos grados Fahrenheit son?", o: ["20", "22", "30", "32"], a: 3},
+    {q: "¿A cuántos grados Fahrenheit, corresponde 25°C?", o: ["60", "77", "90", "100"], a: 1},
+    {q: "¿A cuántos grados Celcius corresponde 100°F?", o: ["35,5", "45,5", "55,5", "65,6", "37,7"], a: 4},
+    {q: "¿Cuántos grados Fahrenheit son 5 Celsius?", o: ["41 °F", "61 °F", "71 °F", "51 °F"], a: 0},
+    {q: "¿A cuántos grados Fahrenheit, corresponde 15°C?", o: ["55 °F", "57 °F", "59 °F", "61 °F"], a: 2},
+    {q: "Si la temperatura media es de 86 °F, a cuántos grados Celsius corresponde:", o: ["48", "30", "28", "18"], a: 1},
+    {q: "La temperatura media en la ciudad de Puerto Suarez es de 25 °C ¿Cuál será la temperatura en la escala Fahrenheit?", o: ["100 °F", "97 °F", "77 °F", "67 °F"], a: 2},
+    {q: "¿A cuántos grados Fahrenheit, corresponden 45 °C?", o: ["60", "70", "90", "100", "113"], a: 4},
+    {q: "La sublimación es un cambio de:", o: ["Liquido – solido", "Solido – vapor", "Vapor - liquido", "Solido – liquido"], a: 1},
+    {q: "La Solidificación es un cambio de:", o: ["Liquido –Solido", "Solido- Vapor", "Vapor-Liquido", "Solido-Liquido"], a: 0},
+    {q: "El cambio de fase del estado gaseoso al líquido se conoce como:", o: ["fusión", "vaporización", "condensación", "solidificación"], a: 2},
+    {q: "La condensación se considera una fase de:", o: ["Liquido –Solidó", "Solidó- Vapor", "Vapor-Liquido", "Solido-Liquido"], a: 2},
+    {q: "La dilatación superficial es la expansión de un cuerpo que experimenta cambios de la superficie a causa de:", o: ["una variación de velocidad", "una variación de concentración", "una variación de temperatura", "una variación de presión"], a: 2},
+    {q: "El calor que recibe una sartén de un fogón eléctrico se transmite principalmente:", o: ["Por convección", "Por conducción", "Por radiación", "Todos"], a: 1},
+    {q: "El agua de la piscina se enfría durante la noche (por movimiento de masas de agua).", o: ["Por conducción", "Por radiación", "Por convección", "Todas"], a: 2},
+    {q: "El oro se considera un cuerpo:", o: ["Translucido", "Luminoso", "Opaco", "Transparente"], a: 2},
+    {q: "La vela encendida se considera un cuerpo:", o: ["Luminoso", "Translucido", "Opaco", "Transparente"], a: 0},
+    {q: "¿Cuáles de estos cuerpos se consideran Opacos?", o: ["Piedra", "Vidrio", "Papel de seda", "Agua"], a: 0},
+    {q: "¿Cuáles de estos cuerpos se consideran como cuerpos iluminados?", o: ["Sol", "Velas", "Focos", "Madera"], a: 3},
+    {q: "Los cuerpos iluminados (no emiten luz propia) corresponden a la fuente:", o: ["primaria", "Secundaria", "Terciaria", "Cuaternaria"], a: 1},
+    {q: "La luz se clasifica en cuerpos:", o: ["luminosos y opacos", "luminosos y transparentes", "Luminoso e iluminado", "iluminados y opacos"], a: 2},
+    {q: "El papel se puede considerar como un cuerpo:", o: ["Luminoso", "Opaco / Translucido", "Transparente", "Ninguno"], a: 1},
+    {q: "Un joven se arregla frente a un espejo plano a 35 cm; su imagen es:", o: ["Virtual", "Real", "Puntual", "Geométrica"], a: 0}
+],
         
         comp: [
-            {q: "Es el hardware la parte tangible y visible del computador", o: ["Verdadero", "Falso"], a: 0},
-            {q: "¿Cuál de estos no es un software de aplicación?", o: ["Base de datos", "Software empresarial", "Compiladores", "Software educativo"], a: 2},
-            {q: "Es un periférico de entrada:", o: ["La impresora", "Disco duro", "La pantalla", "Scanner"], a: 3},
-            {q: "La Unidad de Control, la Unidad Aritmética y lógica y Memoria Central son partes de:", o: ["La memoria", "Los Periféricos", "La Tarjeta Madre", "La Unidad Central de Proceso"], a: 3},
-            {q: "Conectan el procesador central con los demás componentes de un computador:", o: ["Los circuitos", "La tarjeta Madre", "Bus", "Reloj"], a: 2},
-            {q: "El concepto 'Es todo lo físico de un computador' corresponde a:", o: ["Computador", "Software", "Hardware", "Periférico"], a: 2},
-            {q: "Es la parte que 'no se puede tocar' de un computador:", o: ["Memoria", "Software", "Pantalla", "Periférico"], a: 1},
-            {q: "¿Un Sistema Operativo es?", o: ["Software de Desarrollo", "Software Utilitario", "Software de Aplicación", "Software de Base"], a: 3},
-            {q: "¿Un antivirus es un programa informático que tiene el propósito de detectar y eliminar virus?", o: ["Falso", "Verdadero"], a: 1},
-            {q: "Los virus, gusanos, troyanos, spywares son:", o: ["Programas con consentimiento", "Programas sin consentimiento", "Programas de partición", "Programas que infectan humanos"], a: 1}
-        ],
+    {q: "Es el hardware la parte tangible y visible del computador", o: ["verdadero", "falso"], a: 0},
+    {q: "¿Cuál de estos no es un software de aplicación?", o: ["base de datos", "software empresarial", "compiladores", "software educativo"], a: 2},
+    {q: "Es un periférico de entrada:", o: ["La impresora", "Disco duro", "La pantalla", "Scanner"], a: 3},
+    {q: "La Unidad de Control, la Unidad Aritmética y lógica y Memoria Central (registros) son partes o componentes de otra unidad Mayor llamada", o: ["La memoria", "Los Periféricos", "La Tarjeta Madre", "La Unidad Central de Proceso"], a: 3},
+    {q: "Conectan el procesador central con los demás componentes de un computador:", o: ["Los circuitos", "La tarjeta Madre", "Bus", "Reloj"], a: 2},
+    {q: "El concepto 'Es todo lo físico de un computador; o sea todo lo que se puede tocar y ver' corresponde a:", o: ["Computador", "Software", "Hardware", "Periférico"], a: 2},
+    {q: "Es la parte que 'no se puede tocar' de un computador, corresponde al concepto de:", o: ["Memoria", "Software", "Pantalla", "Periférico"], a: 1},
+    {q: "¿Un Sistema Operativo es?", o: ["Software de Desarrollo", "Software Utilitario", "Software de Aplicación", "Software de Base"], a: 3},
+    {q: "¿Un antivirus es un programa informático que tiene el propósito de detectar y eliminar virus y otros programas perjudiciales antes o después de que ingresen al sistema?", o: ["Falso", "Verdadero"], a: 1},
+    {q: "Los virus, gusanos, troyanos, spywares son:", o: ["Tipos de programas informáticos que se ejecutan con el consentimiento del usuario o propietario de un ordenador", "Tipos de programas informáticos que suelen utilizarse sin el consentimiento del usuario o propietario de un ordenador", "Son programas informáticos que se utilizan para particionar el disco duro de un ordenador", "son programas que pueden infectar a los seres humanos a través del 5G"], a: 1},
+    {q: "¿Cuál fue uno de los primeros dispositivos de calcular, en la historia?", o: ["Abaco", "Calculadora", "Celular", "Ninguno de los otros"], a: 0},
+    {q: "¿Esquema básico del CPU?", o: ["Unidad de control, Unidad Aritmética y lógica, Memoria central", "Periféricos de Salida, Memoria secundaria", "Periféricos de Entrada, Memoria Central, Periféricos de Salida", "Ninguno de los otros"], a: 0},
+    {q: "Clasificación del software", o: ["Software de base, aplicación, lenguaje de programación", "Android, Word, Excel", "Window 11, Windows Media", "Ninguno de los otros"], a: 0},
+    {q: "¿Pascal es famoso por inventar?", o: ["El Abaco", "Primera máquina mecánica para adicionar", "Los logaritmos", "Un lenguaje de programación"], a: 1},
+    {q: "¿Cuál de los siguientes incisos no es un lenguaje de programación?", o: ["LISA", "Visual basic", "Java", "C++"], a: 0},
+    {q: "¿Cuál de los incisos es software de base (sistema operativo)?", o: ["Windows 11", "MS- Word", "Windows Media", "WhatsApp"], a: 0},
+    {q: "Es la parte más importante de la computadora", o: ["El teclado", "El software", "El hardware", "El procesador"], a: 3},
+    {q: "Dispositivo de entrada que permite realizar operaciones de selección y arrastre", o: ["Teclado", "Impresora", "Ratón", "CPU"], a: 2},
+    {q: "Dispositivo que permite almacenar la información y transportarla con facilidad", o: ["Disco Duro", "Teclado", "Memoria USB", "Memoria Ram"], a: 2},
+    {q: "Dispositivos que permiten ingresar información a la computadora", o: ["Dispositivo de Salida", "Dispositivo de Almacenamiento", "Dispositivo de Procesamiento de datos", "Dispositivo de entrada"], a: 3},
+    {q: "Dispositivo que permite mostrar en papel la información de la computadora", o: ["Papel", "Disco Duro", "Monitor", "Impresora"], a: 3},
+    {q: "Es la ciencia aplicada que abarca el estudio y aplicación del tratamiento automático de la información", o: ["Informática", "Información", "Matemáticas", "Inglés"], a: 0},
+    {q: "¿Cuál de estos elementos no forma parte del computador?", o: ["mouse", "CPU", "teclado", "pen drive"], a: 3},
+    {q: "¿los dispositivos de entrada permiten la comunicación entre el computador y la internet?", o: ["verdadero", "falso"], a: 1},
+    {q: "La resolución del monitor se trata del número de puntos que puede ser representada por la pantalla", o: ["verdadero", "falso"], a: 0},
+    {q: "En una visión general, el ordenador se compone de:", o: ["una memoria central que contiene programas y datos", "una unidad central de proceso que ejecuta programas", "canales de entrada / salida para los intercambios de información con el exterior", "todas las otras"], a: 3},
+    {q: "El conjunto de los componentes lógicos de un ordenador se denomina:", o: ["Software", "Hardware", "CPU", "Sistema operativo"], a: 0},
+    {q: "El conjunto de los componentes físicos de un ordenador se denomina:", o: ["Software", "Hardware", "Tarjeta madre", "Virus"], a: 1},
+    {q: "Una memoria de 1K tiene:", o: ["1024 direcciones", "1000 direcciones", "100 direcciones", "256 direcciones"], a: 0},
+    {q: "La memoria ROM es:", o: ["Memoria de sólo lectura (read only memory)", "Memoria que se borra al desconectar la corriente", "Memoria para almacenar los programas como Word, Excel, etc.", "Memoria para almacenar los rostros de las personas"], a: 0},
+    {q: "Hay varios tipos más de memorias, que son:", o: ["PROM (programmable ROM), es una ROM programable una sola vez. Una vez grabada se convierte en una ROM a todos los efectos", "EPROM (erasable PROM), se pueden grabar y regrabar cuantas veces se quiera. Para regrabarlas se utilizan métodos ópticos", "EEPROM (electrically EPROM), igual que una EPROM pero regrabable eléctricamente", "todas las demás"], a: 3},
+    {q: "¿Por qué tipos de memoria está formada la memoria central de un ordenador?", o: ["Por discos magnéticos", "Por memorias RAM y ROM", "Por memorias ROM", "Por cintas magnéticas"], a: 1},
+    {q: "Una memoria RAM es una 'memoria de solo lectura'", o: ["verdadero", "falso"], a: 1},
+    {q: "¿Qué es un programa?", o: ["Un conjunto de instrucciones redactadas en un lenguaje de programación que después de ser compiladas se instalan en la RAM y se ejecutan por el procesador de la computadora", "Una tabla de datos compuesta por registros y campos", "Una tabla de datos compuesta por instrucciones de ordenador en el lenguaje fortran", "Un conjunto de instrucciones escritas en inglés que, después de ser compiladas, se ejecutan por el procesador de la computadora tras leerlas en el disco duro"], a: 0},
+    {q: "Se llama 'código fuente' a:", o: ["Un diagrama de flujos realizado por un analista de sistemas", "Un programa escrito por un programador en cualquier lenguaje de programación", "Un código objeto después de ser compilado", "Una tabla de una base de datos"], a: 1},
+    {q: "¿Cuál es el principal elemento del ordenador?", o: ["La memoria central", "La unidad central de proceso", "La pantalla", "La unidad aritmético – lógica"], a: 1},
+    {q: "Cuál es la parte de la computadora que permite almacenar los datos:", o: ["Monitor", "Teclado", "CPU", "Disco Duro"], a: 3},
+    {q: "¿Cuál de los siguientes no es un periférico de entrada?", o: ["El ratón", "El monitor", "El teclado", "El Scanner"], a: 1},
+    {q: "El proceso de adaptar al medio la información a transmitir se le denomina:", o: ["Encriptación", "Codificación", "Actualización", "Activación"], a: 1},
+    {q: "Es una placa de circuito impreso a la que se conectan los componentes que constituyen la computadora u ordenador. Es una parte fundamental a la hora de armar un pc de escritorio u portátil", o: ["motherboard o mainboard", "Memoria ROM", "Memoria RAM", "Procesador"], a: 0},
+    {q: "Es un ejemplo de dispositivo solamente de entrada", o: ["Teclado", "CDROM", "DVDROM", "RW"], a: 0},
+    {q: "Cuál de estos periféricos es un dispositivo de entrada", o: ["RAM", "Monitor", "Scanner", "Impresora"], a: 2},
+    {q: "Quién invento la arquitectura del computador:", o: ["Joseph Marie Jacquard", "Von Neumann", "Herman Hollerith", "Blaise Pascal"], a: 1},
+    {q: "Cuál fue la primera computadora comercial:", o: ["UNIVAC", "IBM 650", "EDVAC", "ENIAC"], a: 0},
+    {q: "¿Qué es el SSD?", o: ["Hard drive disk", "Solid-state drive", "Read–Only Memory", "Random Access Memory"], a: 1},
+    {q: "Los CD-ROM tiene una capacidad de almacenamiento de:", o: ["1GB", "250MB", "4.7GB", "700MB"], a: 3},
+    {q: "Qué es un Sistema", o: ["Es un conjunto de elementos o partes que se integran o relacionan para producir un resultado", "Es un elemento de la Ingeniería para procesar datos y entregar resultados", "Conjunto de elementos que de forma separada procesan datos y entregan resultados", "Parte de la Ingeniería que integra elementos en un todo y sirve para procesar información"], a: 0},
+    {q: "Mencione los cuatro elementos que integran un Sistema Informático:", o: ["Hardware, Software, Internet, Información", "Hardware, Software, Datos, Personas", "Computadoras, Impresoras, Parlantes, Auriculares", "Hardware, Software, Datos, Información"], a: 1},
+    {q: "Cuál de las siguientes características no forman parte de la tercera generación de computadores", o: ["Los campos de aplicación se mantienen, pero la tecnología ahora permite a los ordenadores llegar a más instituciones y empresas", "Los lenguajes de programación evolucionan hacia mayor facilidad de uso y mayor poder de desarrollo", "Caracterizada por el uso de los transistores", "Se reduce el consumo de energía"], a: 2},
+    {q: "De todos estos dispositivos mencione el que no es de Entrada de Datos.", o: ["Teclado", "Digitalizador", "Monitor touch", "Todas las demás"], a: 3},
+    {q: "Cuáles de las siguientes características no definen a la Memoria Principal o Central de un ordenador:", o: ["Memoria de mayor velocidad", "Memoria ligada directamente a las unidades más rápidas del computador (UC y UAL)", "Para que un programa se ejecute debe estar almacenado en la memoria principal", "La información guardada en ella es permanente"], a: 3},
+    {q: "Seleccione el elemento que no es un Hardware de la computadora:", o: ["Procesadores", "Tarjetas de Video", "Memorias", "Antivirus"], a: 3},
+    {q: "La arquitectura básica de un computador es:", o: ["Almacenamiento, tarjeta madre, disco duro", "Unidad aritmética, unidad lógica, memoria RAM", "Periférico de entrada, periférico de salida, almacenamiento", "Unidad Control de Proceso, Periférico de Entrada, Periférico de Salida"], a: 3},
+    {q: "Es una topología de red donde cada nodo se conecta directamente con los otros nodos:", o: ["Estrella", "Malla", "Bus", "Anillo"], a: 1},
+    {q: "Es un medio de transmisión aéreo que recibe y transmite señales de estaciones terrenas", o: ["Cable Coaxial", "Cable UTP", "Satélite", "Fibra óptica"], a: 2},
+    {q: "Es una transmisión donde los puntos de comunicación hacen de receptor y transmisor en diferentes tiempos", o: ["Simplex", "Semi-Duplex", "Paralela", "Duplex"], a: 1},
+    {q: "Son redes que abarcan distancias entre países y continentes:", o: ["MAN", "WAN", "LAN", "Ninguna"], a: 1},
+    {q: "Es un medio de transmisión terrestre de alta velocidad:", o: ["Coaxial", "Microondas", "Satélite", "fibra óptica"], a: 3},
+    {q: "Es un modo de transmisión donde los BITs se transmiten simultáneamente y se presentan dentro del computador o entre computadoras con distancias muy cortas.", o: ["Serie", "Paralelo", "punto a punto", "Multipunto"], a: 1},
+    {q: "Es un modo de transmisión donde los BITs son enviados uno detrás de otro en línea", o: ["Punto a punto", "Paralelo", "Serie", "Multipunto"], a: 2},
+    {q: "Es una transmisión donde el trasmisor y receptor están perfectamente definidos y las comunicaciones son unidireccionales", o: ["Duplex", "Simplex", "Semi-duplex", "Paralela"], a: 1},
+    {q: "¿Cuáles son los Servicios más Representativos Utilizados en la Internet?", o: ["WEB, SMTP, FTP", "VoIP, SSH, Telnet", "IRC, SMTP, P2P", "1V1, 2V2, 3V3"], a: 0},
+    {q: "¿Qué es el correo electrónico?", o: ["Servicio que permite el intercambio de mensajes", "Servicio de chat", "Alternativa al facebook", "Servicio de noticias en internet"], a: 0},
+    {q: "¿Que es un Dominio?", o: ["Domina a las páginas inferiores", "Determina el ancho de banda", "Es el nombre que identifica a un sitio o site en la Web", "Ninguna de las otras"], a: 2},
+    {q: "Qué significa las iniciales WWW?", o: ["Web Wide World", "Wide Web World", "World Web Wide", "World Wide Web"], a: 3},
+    {q: "Son conversaciones o charlas a través del teclado en tiempo real con otros usuarios que están conectados en Internet en ese momento, no importando la ubicación geográfica, esto se llama:", o: ["Internet Relay Chat (IRC)", "El Protocolo FTP", "El Real Chat", "El Twiter"], a: 0},
+    {q: "Qué tipo de conexiones a la red de internet existen:", o: ["Alámbrica e inalámbrica", "Mecate", "Aleatorio", "Secuencial"], a: 0},
+    {q: "Para tener acceso a Internet se tiene que contar con protocolos:", o: ["WWW", "TCP/IP", "IChat", "REDES"], a: 1},
+    {q: "Un megahercio equivale a:", o: ["10 elevado a 6 hercios", "1024 hercios", "1000 hercios", "ninguna es cierta"], a: 0},
+    {q: "Al conjunto de computadoras conectadas entre sí se le conoce como", o: ["Sistema", "Red", "Internet", "Hardware"], a: 1},
+    {q: "Cuando ordenamos y le damos sentido a los datos se convierten en...", o: ["Inteligencia", "Internet", "Información", "Ninguna de las otras"], a: 2},
+    {q: "Es un conjunto de computadoras conectadas entre sí a nivel mundial", o: ["Internet", "Sistema", "Informática", "Todas las demás"], a: 0},
+    {q: "¿Cuáles son tipos de red según su alcance?", o: ["Redes Sociales", "Red de computadoras", "LAN, MAN, WAN", "WWW"], a: 2},
+    {q: "¿Cómo se reconoce una computadora conectada en Internet?", o: ["Nombre de la computadora", "Dirección IP", "Hosts", "Mascara de sub red"], a: 1},
+    {q: "Contiene cables eléctricos y se construye para permitir la transmisión de datos a alta velocidad con un mínimo de distorsión de las señales:", o: ["Cable UTP", "Cable Coaxial", "Cable Fibra Óptica", "Cable Sftp"], a: 1},
+    {q: "Ambos extremos del sistema de comunicación cumplen funciones de transmisor y receptor y los datos se desplazan en ambos sentidos, pero no simultáneamente:", o: ["Simplex", "Semi-Duplex", "Paralela", "Duplex"], a: 1},
+    {q: "Los n bits que componen un mensaje se transmiten uno detrás de otro por la misma línea", o: ["Serie", "Paralelo", "punto a punto", "Ninguna"], a: 0},
+    {q: "Defina que es una Red de comunicaciones", o: ["Es un conjunto de medios técnicos que permiten la comunicación a distancia entre equipos autónomos", "Es la conexión de equipos de computación remotos", "Es la intercomunicación de personas que están en locaciones distintas", "Es la distribución de equipos en una empresa"], a: 0},
+    {q: "El red tipo LAN, es una red de área local cuyo alcance se restringe a:", o: ["Un radio de unos cuantos miles de metros, y que normalmente cubre el espacio de una ciudad", "Un radio de unos cuantos miles de metros, y que normalmente cubre el espacio de una empresa", "Un radio de unos cuantos cientos de metros, y que normalmente cubre el espacio de una empresa", "Un radio de unos cuantos cientos de metros, y que normalmente cubre el espacio de una ciudad"], a: 2},
+    {q: "En la topología de Red tipo Estrella, Si el nodo central falla.", o: ["Parte de la red continua sin problemas", "Toda la red continua sin problemas", "Toda la red Falla", "Ninguna de las otras"], a: 2},
+    {q: "La topología de red tipo Árbol resulta de la combinación de las topologías de:", o: ["Bus y Malla", "Malla y Estrella", "Bus y Estrella", "Ninguna de las combinaciones"], a: 2},
+    {q: "Para que la información fluya se necesita:", o: ["Emisor, Señal, Canal", "Emisor, Medio, Receptor", "Medio, Canal, Receptor", "Emisor, Canal, Periférico"], a: 1},
+    {q: "Los voltajes que proporciona la fuente de alimentación son de 9 y 6 voltios.", o: ["F", "V"], a: 0},
+    {q: "El servicio de internet corresponde como una característica de red de:", o: ["MAN", "WAN", "PAN", "LAN"], a: 1},
+    {q: "En un domicilio (hogar) encontramos un router al cual todos los integrantes de la familia se conectan, la topología de red que están ocupando es:", o: ["Anillo", "Mixta", "Estrella", "Árbol"], a: 2},
+    {q: "La característica principal de La topología de Red Árbol es:", o: ["Jerárquica", "Extensa", "Central", "Redundante"], a: 0}
+],
         
         eng: [
-            {q: "Which is the best answer: Where is Mary? She ... over there.", o: ["is stand", "is standing", "stand", "stands"], a: 1},
-            {q: "Which of the following is in the present continuous?", o: ["are wearing", "is wear", "be wearing", "at wearing"], a: 0},
-            {q: "... doing? (B) I am washing dishes.", o: ["What are you", "What you", "What do you", "What does you"], a: 0},
-            {q: "Which of the following is past continuous: They ... TV in the dining room last night.", o: ["Are watched", "were watching", "did watched", "does watched"], a: 1},
-            {q: "Which is the best answer to 'Where is Mary now'? She ... near the cafeteria.", o: ["is stand", "is standing", "stand", "stands"], a: 1},
-            {q: "They ... eating their dinner right now because their food is too hot.", o: ["not", "don't", "aren't", "isn't"], a: 2},
-            {q: "Are you studying English now? (B) Yes, I ...", o: ["do", "am", "are", "is"], a: 1},
-            {q: "Which verb is in the present continuous?", o: ["is sing", "is sung", "is singing", "is sang"], a: 2},
-            {q: "I can't talk to you right now because I ...", o: ["am study", "are studying", "am studying", "study"], a: 2},
-            {q: "He usually goes for a walk at this time, but he ... for a walk now.", o: ["doesn't go", "not go", "isn't going", "not going"], a: 2}
-        ]
+    // Preguntas 1-12 (Negativas, etc.)
+    {q: "Which of the following is not a negative sentence:", o: ["The baby is not beautiful.", "She reads the lesson.", "She does not read."], a: 1},
+    {q: "Which is a negative sentence", o: ["They do the homework.", "He reads many books.", "She does not study for the tests."], a: 2},
+    {q: "Which of the following is not a negative sentence:", o: ["The students are in the laboratory.", "She doesn't paint the picture", "They don't follow the book."], a: 0},
+    {q: "The supermarket ... not on this avenue..", o: ["am", "does", "is", "are"], a: 2},
+    {q: "My birthday ... in April.", o: ["I", "is", "am", "are"], a: 1},
+    {q: "Which is not a negative sentence:", o: ["The baby is not beautiful.", "Read the lesson", "She does not read."], a: 1},
+    {q: "Which of the following is not a negative sentence:", o: ["That shop is not cheaper", "It doesn´t sell bargains", "I don´t have much money.", "This is a cheaper shop."], a: 3},
+    {q: "Which is the correct negative form of the verb", o: ["I don't enjoy the party today", "I not enjoy the party today", "I'm not enjoy the party today"], a: 0},
+    {q: "Which is the correct negative form of the verb", o: ["I don't enjoy the party.", "I not enjoy the party.", "I'm not enjoy the party."], a: 0},
+    {q: "Which is the correct auxiliary in the present: He ... a good computer in the morning", o: ["don't find", "couldn´t find", "doesn't find"], a: 2},
+    {q: "Which is the correct auxiliary in the present: He ... pizza for dinner.", o: ["don't likes", "couldn´t find", "doesn't like", "doesn't likes"], a: 2},
+    {q: "They ... eating their dinner right now because their food is too hot.", o: ["not", "don't", "aren't"], a: 2},
+
+    // Preguntas 13-68 (Artículos, sustantivos, preguntas, etc.)
+    {q: "Which of the following you count:", o: ["coffee", "milk", "information", "home"], a: 3},
+    {q: "We don´t go to university ……… Monday.", o: ["at", "in", "about", "on"], a: 3},
+    {q: "Which is the answer to the question: Where do you live?", o: ["on the wall", "on an avenue", "on the radio", "on the desk"], a: 1},
+    {q: "Which of the following is singular noun:", o: ["child", "children", "people", "men"], a: 0},
+    {q: "Which of the following is an imperative sentence:", o: ["Mary does the homework.", "Peter goes to school.", "Do the homework."], a: 2},
+    {q: "Which is the answer to the question: When do you have classes?", o: ["in the morning", "in the house", "in the box", "for today"], a: 0},
+    {q: "Which is the answer to the question: Where do they study?", o: ["at midnight", "at a public school", "in the afternoon", "at noon"], a: 1},
+    {q: "Which is the answer to the question: Who is the doctor?", o: ["in the hospital", "at the university", "with a pen", "the man in blue shirt"], a: 3},
+    {q: "Which is the answer to the question: Where do you live?", o: ["on the wall", "in an apartment building", "on the radio", "on the desk"], a: 1},
+    {q: "I have an ... class at ten in the morning.", o: ["movie", "nice", "English", "arabic"], a: 2},
+    {q: "We don't go to ... university on Monday.", o: ["an", "a", "like", "the"], a: 3},
+    {q: "Choose the correct interrogative word for each sentence: He cries because he's sad at home", o: ["Where does he cry ?", "When does he cry?", "Why does he cry?"], a: 2},
+    {q: "Choose the correct interrogative word for each sentence: They work in a laboratory", o: ["Where do they work ?", "When do they work?", "Who do they work?"], a: 0},
+    {q: "Choose the correct interrogative word for each sentence: We get together on Saturdays.", o: ["Why do you get together?", "When do you get together?", "Who do you get together?"], a: 1},
+    {q: "Choose the correct interrogative word for each sentence: He cries because he's sad at home.", o: ["Where does he cry ?", "When does he cry?", "Why does he cry?"], a: 2},
+    {q: "Which is an adverb of time", o: ["fast", "never", "at night", "finally"], a: 2},
+    {q: "Which of the following is a plural noun", o: ["Nose", "people", "mouth", "lady"], a: 1},
+    {q: "Which question is not correct", o: ["Are they in class?", "Does she work?", "Many people are at home today?"], a: 2},
+    {q: "Which is an adverb of time", o: ["fast", "never", "later", "finally"], a: 2},
+    {q: "My Geography class is … 10:30 in the morning.", o: ["at", "in", "on", "between"], a: 0},
+    {q: "Which is an adverb of time", o: ["fast", "never", "later", "finally"], a: 2},
+    {q: "Which of the following is not a verb", o: ["Read", "write", "look", "eyes"], a: 3},
+    {q: "Which of the following is a subject", o: ["Big", "large", "program", "early"], a: 2},
+    {q: "Which of the following is an adverb", o: ["finally", "beautiful", "small", "operate"], a: 0},
+    {q: "Which of the following is a subject:", o: ["Children", "eat", "be", "go"], a: 0},
+    {q: "Which of the following is not a verb:", o: ["dance", "go", "write", "small"], a: 3},
+    {q: "Which of the following is not a subject:", o: ["communicate", "newspaper", "radio", "book"], a: 0},
+    {q: "The ball is ... the box.", o: ["doesn't", "have", "in", "a"], a: 2},
+    {q: "Choose the subject pronoun:", o: ["her", "us", "we", "them"], a: 2},
+    {q: "Which sentence is correct:", o: ["The students does have classes", "The teacher do has time.", "We have a good time."], a: 2},
+    {q: "Which question is correct:", o: ["Have they good grades?", "Reads he many books?", "Do you have many friends?"], a: 2},
+    {q: "Which negative sentence is correct:", o: ["The teacher does not is good", "The boys are not at home.", "The players don't are here."], a: 1},
+    {q: "Which question is correct:", o: ["Do you study hard?", "They always study?", "The house is pretty?"], a: 0},
+    {q: "Which of the following is a proper noun:", o: ["My teacher", "school.", "Mary and John."], a: 2},
+    {q: "Which of the following is a verb:", o: ["Happy", "beautiful", "read", "white"], a: 2},
+    {q: "Which of the following is a sentence:", o: ["With the pen", "the table", "morning", "they come home."], a: 3},
+    {q: "Which of the following is a subject:", o: ["Children", "eat", "be", "go"], a: 0},
+    {q: "Which of the following is a verb:", o: ["Coat", "pen", "paper", "write"], a: 3},
+    {q: "Which is an adjective:", o: ["beautiful", "picture", "house", "computer"], a: 0},
+    {q: "... books are yours and these are mine.", o: ["that", "this", "those", "these"], a: 2},
+    {q: "How old is she?", o: ["she twenty", "She is twenty.", "she has twenty", "she have twenty"], a: 1},
+    {q: "... are you from? I am from Camiri.", o: ["who", "where", "what", "When"], a: 1},
+    {q: "Which is a noun?", o: ["Great", "big", "small", "city"], a: 3},
+    {q: "Which is a personal pronoun?", o: ["I", "his", "her", "my"], a: 0},
+    {q: "Which is an adjective?", o: ["People", "computers", "heavy", "keyboard"], a: 2},
+    {q: "Which of the following is not a sentence:", o: ["In the classroom", "I am a student.", "They go home.", "He reads a book."], a: 0},
+    {q: "Which is not an adjective:", o: ["big", "man", "small", "interesting"], a: 1},
+    {q: "…. are you? My name is Ronald Cusi", o: ["What", "Who", "Where", "When"], a: 1},
+
+    // Preguntas 69-105 (Pasado Simple)
+    {q: "My classmate and I ... our teacher a question about the test.", o: ["ask", "asked", "was asking"], a: 1},
+    {q: "Which is the correct form of the verb permit in the past", o: ["permit", "permited", "permitted", "permission"], a: 2},
+    {q: "The past of the verb enjoy", o: ["enjoied", "enjoy", "enjoyed", "enjoyyed"], a: 2},
+    {q: "Choose the correct question in the past", o: ["He taught Math yesterday?", "Studied Mary English yesterday morning?", "Did we thought to travel last week?", "Did he drive a new car?"], a: 3},
+    {q: "Which verb is in the past", o: ["swum", "swim", "swimming", "swam"], a: 3},
+    {q: "Yesterday, we ... a new lesson", o: ["did not writing", "didn´t wrote", "didn´t write", "not did write"], a: 2},
+    {q: "….(A) ... you a student? (B) Yes, I ....", o: ["Were / was", "Did / did", "Was / was"], a: 0},
+    {q: "….(A) Did your brothers travel last year? (B) No, they ...", o: ["weren't", "didn't", "don't"], a: 1},
+    {q: "….(A) ... your friend busy last week? (B) Yes, he ....", o: ["Was / was", "Did / was", "Is / was"], a: 0},
+    {q: "….(A) Did it snow last summer? (B) No, it ....", o: ["not", "wasn't", "didn't"], a: 2},
+    {q: "…. (A) Was it cold last week? (B) Yes, it ....", o: ["did", "were", "was"], a: 2},
+    {q: "…(A) ... you know the answer? (B) No, I ....", o: ["Did / don't", "Did / didn't", "Were / wasn't"], a: 1},
+    {q: "Decide if question is correct or wrong : I watched TV when I heard the phonering.", o: ["Correct", "Wrong"], a: 1},
+    {q: "….(A) Did you ... breakfast? (B) Yes, I did.", o: ["eat", "eating", "ate"], a: 0},
+    {q: "…(A) ... you ... TV? (B) Yes, I did.", o: ["Was / watch", "Did / watched", "Did / watch"], a: 2},
+    {q: "…(A) ... they your books? (B) Yes, they ...", o: ["Are / were", "Were / were", "Did / did"], a: 1},
+    {q: "….(A) Did you like the movie? (B) Yes, I ....", o: ["did", "don't", "was"], a: 0},
+    {q: "….(A) ... you late? (B) No, I ....", o: ["Was / weren't", "Did / wasn't", "Were / wasn't"], a: 2},
+    {q: "….(A) ... we all pass the test? (B) Yes, you ...!", o: ["Did / did", "Are / are", "Were / were"], a: 0},
+    {q: "….(A) Were they here at 10 am? (B) No, they ...", o: ["weren't", "didn't", "not"], a: 0},
+    {q: "…(A) Was yesterday Monday? (B) ... it ....", o: ["No / wasn't", "No / didn't", "Yes / were"], a: 0},
+    {q: "…(A) ... these questions easy? (B) Yes, they ...", o: ["Did / did", "Were / were", "Was / was"], a: 1},
+    {q: "Decide if statement is correct or wrong: I left home at six-thirty this morning and went to work.", o: ["Correct", "Wrong"], a: 0},
+    {q: "Decide if statement is correct or wrong: He was doing his homework When I called him.", o: ["Correct", "Wrong"], a: 0},
+    {q: "Decide if question is correct or wrong: Did the storm wake you up? It Was raining heavily all night.", o: ["Correct", "Wrong"], a: 1},
+    {q: "Decide if question or statement is correct or wrong : Stewart wasn't careful. He hit a tree and he was falling off his bike.", o: ["Correct", "Wrong"], a: 1},
+    {q: "…(A) ... Thomas here this morning? (B) Yes, he ....", o: ["Did / was", "Was / was", "Were / were"], a: 1},
+    {q: "Are these verbs irregular? GIVE SLEEP BUY COST THINK", o: ["T", "F"], a: 0},
+    {q: "Are these verbs regular? LOVE TRAVEL WALK LIKE WANT", o: ["T", "F"], a: 0},
+    {q: "They ... go camping in a park when they were children.", o: ["didn't like", "liked", "liked to"], a: 2},
+    {q: "Where ... you go to school when you were young?", o: ["did", "does", "were"], a: 0},
+    {q: "He ... twenty minutes for the bus yesterday.", o: ["waits", "waited", "was wait"], a: 1},
+    {q: "They ... to the park because they were very tired.", o: ["no walk", "not walk", "didn't walk"], a: 2},
+    {q: "John wanted to ... work yesterday but he was sick.", o: ["go to", "went", "go"], a: 0},
+    {q: "Decide if statement is correct or wrong : I was washing the dishes and Tom was sweeping the floor.", o: ["Correct", "Wrong"], a: 0},
+    {q: "Decide if statement is correct or wrong : Sarah found a new job at an office downtown.", o: ["Correct", "Wrong"], a: 0},
+
+    // Preguntas extraídas del bloque 'eng' final (Present Continuous)
+    {q: "Which is the best answer: Where is Mary? She ... over there.", o: ["is stand", "is standing", "stand", "stands"], a: 1},
+    {q: "Which of the following is in the present continuous?", o: ["are wearing", "is wear", "be wearing", "at wearing"], a: 0},
+    {q: "... doing? (B) I am washing dishes.", o: ["What are you", "What you", "What do you", "What does you"], a: 0},
+    {q: "Which of the following is past continuous: They ... TV in the dining room last night.", o: ["Are watched", "were watching", "did watched", "does watched"], a: 1},
+    {q: "Which is the best answer to 'Where is Mary now'? She ... near the cafeteria.", o: ["is stand", "is standing", "stand", "stands"], a: 1},
+    {q: "They ... eating their dinner right now because their food is too hot.", o: ["not", "don't", "aren't", "isn't"], a: 2},
+    {q: "Are you studying English now? (B) Yes, I ...", o: ["do", "am", "are", "is"], a: 1},
+    {q: "Which verb is in the present continuous?", o: ["is sing", "is sung", "is singing", "is sang"], a: 2},
+    {q: "I can't talk to you right now because I ...", o: ["am study", "are studying", "am studying", "study"], a: 2},
+    {q: "He usually goes for a walk at this time, but he ... for a walk now.", o: ["doesn't go", "not go", "isn't going", "not going"], a: 2}
+]
     };
 
     // ========================================
@@ -1775,7 +2780,7 @@
     };
 
     // ========================================
-    // FUNCIONES PRINCIPALES
+    // FUNCIONES DE UTILIDAD
     // ========================================
 
     function createParticles() {
@@ -1788,7 +2793,6 @@
             const particle = document.createElement('div');
             particle.classList.add('particle');
             
-            // Posición aleatoria
             const left = Math.random() * 100;
             const top = Math.random() * 100;
             const size = Math.random() * 4 + 2;
@@ -1802,7 +2806,6 @@
             particle.style.animationDelay = `${delay}s`;
             particle.style.animationDuration = `${duration}s`;
             
-            // Color aleatorio
             const colors = ['rgba(255,255,255,0.8)', 'rgba(0,78,146,0.6)', 'rgba(255,107,107,0.6)'];
             const color = colors[Math.floor(Math.random() * colors.length)];
             particle.style.background = color;
@@ -1812,26 +2815,39 @@
     }
 
     function getRandomQuestions(sourceArray, count, subjectName) {
-        const shuffled = [...sourceArray].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, count).map(q => ({...q, subject: subjectName}));
-    }
+    // Mezclar todas las preguntas de la materia
+    const shuffled = [...sourceArray].sort(() => Math.random() - 0.5);
+    
+    // Tomar solo las necesarias
+    const selected = shuffled.slice(0, count);
+    
+    // Añadir la materia a cada pregunta
+    return selected.map(q => ({...q, subject: subjectName}));
+}
+
+    // ========================================
+    // FUNCIONES PRINCIPALES DEL EXAMEN
+    // ========================================
 
     function startExam() {
-        const qMat = getRandomQuestions(fullDB.math, examConfig.math.count, 'math');
-        const qFis = getRandomQuestions(fullDB.fisica, examConfig.fisica.count, 'fisica');
-        const qCom = getRandomQuestions(fullDB.comp, examConfig.comp.count, 'comp');
-        const qEng = getRandomQuestions(fullDB.eng, examConfig.eng.count, 'eng');
+    // Obtener preguntas aleatorias para cada materia
+    const qMat = getRandomQuestions(fullDB.math, examConfig.math.count, 'math');
+    const qFis = getRandomQuestions(fullDB.fisica, examConfig.fisica.count, 'fisica');
+    const qCom = getRandomQuestions(fullDB.comp, examConfig.comp.count, 'comp');
+    const qEng = getRandomQuestions(fullDB.eng, examConfig.eng.count, 'eng');
 
-        examQuestions = [...qMat, ...qFis, ...qCom, ...qEng];
-        userAnswers = new Array(40).fill(null);
-        currentIndex = 0;
+    // Combinar todas las preguntas EN ORDEN DE MATERIAS
+    examQuestions = [...qMat, ...qFis, ...qCom, ...qEng]; // ← MANTIENE EL ORDEN
+    
+    userAnswers = new Array(40).fill(null);
+    currentIndex = 0;
 
-        document.getElementById('start-screen').classList.remove('active');
-        document.getElementById('quiz-screen').classList.add('active');
+    document.getElementById('start-screen').classList.remove('active');
+    document.getElementById('quiz-screen').classList.add('active');
 
-        startTimer();
-        renderQuestion();
-    }
+    startTimer();
+    renderQuestion();
+}
 
     function startTimer() {
         const display = document.getElementById('time-left');
@@ -1890,11 +2906,15 @@
             nextBtn.classList.remove('final-btn');
         }
 
+        // Corregir sintaxis LaTeX
+        const correctedQuestion = fixLatexSyntax(q.q);
+        const correctedOptions = q.o.map(opt => fixLatexSyntax(opt));
+
         container.innerHTML = `
             <span class="subject-badge ${badgeClass}">${badgeText}</span>
-            <div class="question-text">${q.q}</div>
+            <div class="question-text">${correctedQuestion}</div>
             <div class="options-container">
-                ${q.o.map((opt, i) => `
+                ${correctedOptions.map((opt, i) => `
                     <label class="option-label">
                         <input type="radio" name="option" value="${i}" ${userAnswers[currentIndex] === i ? 'checked' : ''} onclick="saveAnswer(${i})">
                         <span>${String.fromCharCode(65 + i)}. ${opt}</span>
@@ -1902,6 +2922,11 @@
                 `).join('')}
             </div>
         `;
+        
+        // Renderizar fórmulas matemáticas con KaTeX
+        setTimeout(() => {
+            renderMath(container);
+        }, 100);
     }
 
     function saveAnswer(index) {
@@ -2062,15 +3087,12 @@
                 </div>
             `;
         }
-    }
-
-    // Inicializar partículas cuando se carga la página
-    document.addEventListener('DOMContentLoaded', function() {
-        createParticles();
         
-        // Recrear partículas cada 30 segundos para mantener la animación
-        setInterval(createParticles, 30000);
-    });
+        // Renderizar LaTeX en el feedback si hay fórmulas
+        setTimeout(() => {
+            renderMath(feedbackContainer);
+        }, 100);
+    }
 </script>
 
 </body>
